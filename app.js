@@ -1,23 +1,24 @@
 const express = require('express');
-const auth = require("./auth");
 const app = express();
-const port = 3000;
-const celcom = require('./routes/celcom');
+const port = 3001;
 const general = require('./routes/general');
+const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
 const dotenv = require('dotenv')
+const apiCache = require('apicache');
+let cache = apiCache.middleware
 
 const result = dotenv.config({path: './.env'})
-console.log(result);
 
 if (result.error) {
     throw result.error
 }
 
-console.log(result.parsed)
+app.use(cache('5 minutes'))
 app.use('/node/public', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
+
 
 app.listen(port,
     () => console.log(`listening on ${port}`)

@@ -2,7 +2,8 @@ const mySQLBackend = require("mysql2/promise");
 
 class MySQLBackend {
     constructor(operator) {
-        this.connection = null;
+        // this.connection = null;
+        this.pool = null;
         this.operator = operator;
     }
 
@@ -27,28 +28,44 @@ class MySQLBackend {
             password,
             database: db,
         });
-        return this.connection;
+        this.pool = await mySQLBackend.createPool({
+            connectionLimit: 10,
+            host: "localhost",
+            port: 3306,
+            user,
+            password,
+            database: db,
+        });
+        //   const pool  = mysql2.createPool({
+        //   connectionLimit : 10,
+        //   host            : 'example.org',
+        //   user            : 'bob',
+        //   password        : 'secret'
+        // });
     }
 
-    async disconnect() {
-        return this.connection.end();
-    }
 
-    async query(sqlQuery) {
+    async query(sqlQuery, sqlParams) {
         await this.connect();
-        const [rows, fields] = await this.connection.execute(
-            sqlQuery,
+        // const [rows, fields] = await this.connection.execute(
+        //     sqlQuery, sqlParams
+        // );
+        const [rows, fields] = await this.pool.query(
+            sqlQuery, sqlParams
         );
         return [rows, fields];
     }
 
-    async numRows(sqlQuery) {
+    async numRows(sqlQuery, sqlParams) {
         let numRows;
         await this.connect();
-        const [rows, fields] = await this.connection.execute(
-            sqlQuery,
+        // const [rows, fields] = await this.connection.execute(
+        //     sqlQuery, sqlParams
+        // );
+        const [rows, fields] = await this.pool.query(
+            sqlQuery, sqlParams
         );
-        console.log(rows);
+        console.log(sqlQuery, sqlParams, rows);
         return rows.length;
     }
 }

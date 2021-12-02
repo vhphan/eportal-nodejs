@@ -1,0 +1,13 @@
+GET https://api.eprojecttrackers.com/node/dnb/cellInfo?cellName=DWKUL0433_L7_0010
+X-Requested-With: XMLHttpRequest
+API: df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488
+Accept: application/json
+
+
+
+###
+GET http://localhost:3001/node/dnb/cellInfo?cellName=DWKUL0433_L7_0030
+X-Requested-With: XMLHttpRequest
+API: df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488
+Accept: application/json
+
