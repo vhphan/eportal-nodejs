@@ -1,7 +1,8 @@
 const express = require('express');
 const auth = require("../auth");
 const router = express.Router();
-const pg_db = require('../db/PostgresQueries');
+const pgDb = require('../db/PostgresQueries');
+const mysqlDb = require('../db/MySQLQueries');
 
 router.use(auth('dnb'))
 
@@ -11,6 +12,8 @@ function handler(req, res) {
 
 
 router.get('/', handler);
-router.get('/cellInfo', pg_db.getCellInfo)
+router.get('/cellInfo', pgDb.getCellInfo)
+router.put('/updateNominal', pgDb.updateNominal)
+router.put('/updateConfigs', pgDb.updateConfigs)
 
 module.exports = router;

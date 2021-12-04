@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "apicache": "^1.6.3",
+    "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "exprss": "0.0.1-security",
@@ -20,6 +21,6 @@
     "pg": "^8.7.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.13"
+    "nodemon": "^2.0.15"
   }
 }

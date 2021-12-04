@@ -1,13 +1,7 @@
 const MySQLBackend = require("./db/MySQLBackend");
+const {getCookies} = require("./db/utils");
 
-const get_cookies = request => {
-    let cookies = {};
-    request.headers && request.headers.cookie && request.headers.cookie.split(';').forEach(function (cookie) {
-        let parts = cookie.match(/(.*?)=(.*)$/)
-        cookies[parts[1].trim()] = (parts[2] || '').trim();
-    });
-    return cookies;
-};
+
 
 const checkApi = async (apiKey, operator) => {
     let mySQLBackend;
@@ -28,10 +22,10 @@ const checkApi = async (apiKey, operator) => {
 
 const auth = (operator) => {
     return async (req, res, next) => {
-        const apiKey = req.headers['API'] || req.headers['api'] || get_cookies(req)['API'];
+        const apiKey = req.headers['API'] || req.headers['api'] || getCookies(req)['API'];
         console.log(req.headers)
         console.log(apiKey);
-        console.log(get_cookies(req));
+        console.log(getCookies(req));
         if (!apiKey) {
             const err = new Error('No api key! You are not authenticated! Please login!')
             return res.status(401).json({
