@@ -10,10 +10,10 @@ const checkApi = async (apiKey, operator) => {
 
     switch (operator) {
         case 'dnb':
-            sqlQuery = "SELECT * FROM eproject_dnb.tbluser WHERE API_token = ?";
+            sqlQuery = "SELECT * FROM eproject_dnb.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
         case 'celcom':
-            sqlQuery =  "SELECT * FROM eproject_cm.tbluser WHERE API_token = ?";
+            sqlQuery =  "SELECT * FROM eproject_cm.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
     }
     let numRows = await mySQLBackend.numRows(sqlQuery, [apiKey]);

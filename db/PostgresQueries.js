@@ -1,11 +1,12 @@
 const PostgresBackend = require("../db/PostgresBackend");
 const {getCookies} = require("./utils");
+const asyncHandler = require("../middleware/async");
 const pg = new PostgresBackend();
 
 const getCellInfo = async (request, response) => {
     const {cellName} = request.query;
     console.log(getCookies(request));
-    await pg.connect();
+    await pg.setupPool();
     pg.pool.query("SELECT * FROM dnb.public.tblcellid WHERE \"Cellname\" = $1", [cellName], (error, results) => {
         if (error) {
             throw error
@@ -13,28 +14,31 @@ const getCellInfo = async (request, response) => {
         response.status(200).json(results.rows)
     })
 }
-const getCurrentNominal = async (nominalId) => {
-    const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE WHERE nominal_id=$1";
-    await pg.connect();
-    pg.pool.query(sqlQuery, [nominalId], (error, results) => {
-        if (error) {
-            throw error;
-        }
-        return results.rows;
-    });
+
+const getCurrentNominal = async (dnbIndex) => {
+    const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE dnb_index=$1";
+    const pool = await pg.setupPool();
+    const result = pool.query(sqlQuery, [dnbIndex]);
+    return result.rows;
+};
+
+async function logChanges(dnbIndex, rowBeforeUpdate) {
+    const rowAfterUpdate = await getCurrentNominal(dnbIndex);
+    console.log(rowBeforeUpdate, rowAfterUpdate);
 }
-const updateNominal = async (request, response) => {
+
+const updateNominal = asyncHandler(async (request, response) => {
     const {body} = request;
-    const sqlQuery = "UPDATE dnb.rfdb.rf_nominal\n" +
-        "SET\n" +
-        "    nominal_siteid=$1,\n" +
-        "    rf_pic=$2,\n" +
-        "    active_model=$3,\n" +
-        "    nominal_latitude=$4,\n" +
-        "    nominal_longitude=$5,\n" +
-        "    phase_deployment=$6,\n" +
-        "    phase_commercial=$7\n" +
-        "WHERE nominal_id=$8";
+    const sqlQuery = `UPDATE dnb.rfdb.rf_nominal
+                      SET nominal_siteid=$1,
+                          rf_pic=$2,
+                          active_model=$3,
+                          nominal_latitude=$4,
+                          nominal_longitude=$5,
+                          phase_deployment=$6,
+                          phase_commercial=$7
+                      WHERE dnb_index = $8`;
+    const dnbIndex = body['dnb_index'];
     const sqlParams = [
         body['nominal_siteid'],
         body['rf_pic'],
@@ -43,16 +47,14 @@ const updateNominal = async (request, response) => {
         body['nominal_longitude'],
         body['phase_deployment'],
         body['phase_commercial'],
-        body['nominal_id'],
+        dnbIndex,
     ];
-    await pg.connect();
-    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
-        if (error) {
-            throw error
-        }
+    pg.query(sqlQuery, sqlParams, (error, results) => {
+        if (error) throw error;
+        console.log(results);
         response.status(200).json({result: 'success'});
     });
-}
+})
 
 const updateConfigs = async (request, response) => {
     const {body} = request;
@@ -75,7 +77,7 @@ const updateConfigs = async (request, response) => {
         body['SectorId'],
         body['System'],
     ];
-    await pg.connect();
+    await pg.setupPool();
     pg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
             throw error
@@ -83,7 +85,6 @@ const updateConfigs = async (request, response) => {
         response.status(200).json({result: 'success'});
     });
 }
-
 
 
 module.exports = {

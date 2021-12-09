@@ -4,6 +4,16 @@ const router = express.Router();
 const pgDb = require('../db/PostgresQueries');
 const mysqlDb = require('../db/MySQLQueries');
 
+const apicache = require('apicache');
+//
+// let app = express()
+let cache = apicache.middleware
+//
+// app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
+//   // do some work... this will only occur once per 5 minutes
+//   res.json({ foo: 'bar' })
+// })
+
 router.use(auth('dnb'))
 
 function handler(req, res) {
@@ -12,7 +22,7 @@ function handler(req, res) {
 
 
 router.get('/', handler);
-router.get('/cellInfo', pgDb.getCellInfo)
+router.get('/cellInfo',  cache('5 minutes'), pgDb.getCellInfo)
 router.put('/updateNominal', pgDb.updateNominal)
 router.put('/updateConfigs', pgDb.updateConfigs)
 
