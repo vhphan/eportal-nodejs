@@ -5,7 +5,6 @@ const pg = new PostgresBackend();
 
 const getCellInfo = async (request, response) => {
     const {cellName} = request.query;
-    console.log(getCookies(request));
     await pg.setupPool();
     pg.pool.query("SELECT * FROM dnb.public.tblcellid WHERE \"Cellname\" = $1", [cellName], (error, results) => {
         if (error) {
@@ -24,7 +23,6 @@ const getCurrentNominal = async (dnbIndex) => {
 
 async function logChanges(dnbIndex, rowBeforeUpdate) {
     const rowAfterUpdate = await getCurrentNominal(dnbIndex);
-    console.log(rowBeforeUpdate, rowAfterUpdate);
 }
 
 const updateNominal = asyncHandler(async (request, response) => {
@@ -49,11 +47,13 @@ const updateNominal = asyncHandler(async (request, response) => {
         body['phase_commercial'],
         dnbIndex,
     ];
+
     pg.query(sqlQuery, sqlParams, (error, results) => {
+        console.log('update executed');
         if (error) throw error;
-        console.log(results);
         response.status(200).json({result: 'success'});
     });
+
 })
 
 const updateConfigs = async (request, response) => {

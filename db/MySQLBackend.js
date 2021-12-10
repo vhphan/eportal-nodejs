@@ -65,7 +65,6 @@ class MySQLBackend {
         const [rows, fields] = await this.pool.query(
             sqlQuery, sqlParams
         );
-        console.log(sqlQuery, sqlParams, rows);
         return rows.length;
     }
 }

@@ -1,8 +1,13 @@
 const {Client, Pool} = require('pg');
+import createSubscriber from "pg-listen"
+
+
+
 
 class PostgresBackend {
     constructor() {
         this.pool = null;
+        this.client = null;
         this.config = {};
     }
 
@@ -21,6 +26,13 @@ class PostgresBackend {
     }
 
     getClient() {
+        this.config = {
+            user: process.env.PGDB_USER,
+            password: process.env.PGDB_PASS,
+            host: 'localhost',
+            database: 'dnb',
+            port: 6543,
+        };
         return new Client(this.config);
     }
 
@@ -47,6 +59,13 @@ class PostgresBackend {
                 callback(null, results.rows)
             })
         });
+    }
+
+    getSubscriber() {
+        // const databaseUrl = process.env.DB_URL_RFDB;
+        const databaseUrl = '"postgres://postgres:postgres@localHost:6543/rfdb"';
+        console.log('dburl', databaseUrl);
+        return createSubscriber({connectionString: databaseUrl});
     }
 }
 

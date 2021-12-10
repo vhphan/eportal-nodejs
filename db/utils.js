@@ -29,8 +29,17 @@ const getCookies = request => {
     return cookies;
 };
 
+const createListener = function (pgClient, eventName, callBack = null) {
+    pgClient.connect();
+    pgClient.query(`LISTEN "${eventName}"`);
+    pgClient.on('notification', function (data) {
+        console.log(data.payload);
+        if (callBack) callBack(data);
+    });
+};
 
 module.exports = {
     dataToCSV,
     getCookies,
+    createListener
 }

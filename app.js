@@ -6,6 +6,8 @@ const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
 const dotenv = require('dotenv')
 const cors = require('cors');
+const PostgresBackend = require("./db/PostgresBackend");
+const {createListener} = require("./db/utils");
 
 const result = dotenv.config({path: './.env'})
 
@@ -23,3 +25,7 @@ app.use('/node/dnb', dnb);
 app.listen(port,
     () => console.log(`listening on ${port}`)
 );
+
+const pg = new PostgresBackend();
+const client = pg.getClient();
+createListener(client, 'db_change');

@@ -23,9 +23,6 @@ const checkApi = async (apiKey, operator) => {
 const auth = (operator) => {
     return async (req, res, next) => {
         const apiKey = req.headers['API'] || req.headers['api'] || getCookies(req)['API'];
-        console.log(req.headers)
-        console.log(apiKey);
-        console.log(getCookies(req));
         if (!apiKey) {
             const err = new Error('No api key! You are not authenticated! Please login!')
             return res.status(401).json({
