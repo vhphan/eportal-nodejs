@@ -25,6 +25,9 @@ function handler(req, res) {
 
 router.get('/', handler);
 router.get('/cellInfo',  cache('5 minutes'), pgDb.getCellInfo)
+router.get('/fullView',  cache('15 minutes'), pgDb.dbFullViewData)
+router.get('/changeLog',  cache('15 minutes'), pgDb.getChangeLog)
+
 router.put('/updateNominal', pgDb.updateNominal)
 router.put('/updateConfigs', pgDb.updateConfigs)
 

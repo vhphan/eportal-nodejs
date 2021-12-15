@@ -33,13 +33,16 @@ const createListener = function (pgClient, eventName, callBack = null) {
     pgClient.connect();
     pgClient.query(`LISTEN "${eventName}"`);
     pgClient.on('notification', function (data) {
-        console.log(data.payload);
         if (callBack) callBack(data);
     });
 };
 
+
+const isObject = (v) => typeof v === 'object' && v !== null;
+
 module.exports = {
     dataToCSV,
     getCookies,
-    createListener
+    createListener,
+    isObject
 }

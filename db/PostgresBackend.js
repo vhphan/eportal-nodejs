@@ -1,6 +1,13 @@
 const {Client, Pool} = require('pg');
-import createSubscriber from "pg-listen"
+import createSubscriber from "pg-listen";
+import dotenv from 'dotenv';
+const result = dotenv.config();
 
+if (result.error) {
+  throw result.error;
+}
+
+console.log('dotenv parsed', result.parsed);
 
 
 
