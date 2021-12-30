@@ -4,12 +4,12 @@ const router = express.Router();
 const pgDb = require('../db/PostgresQueries');
 const mysqlDb = require('../db/MySQLQueries');
 
-const apicache = require('apicache');
+const apiCache = require('apicache');
 const {createListener} = require("../db/utils");
 const PostgresBackend = require("../db/PostgresBackend");
 //
 // let app = express()
-let cache = apicache.middleware
+let cache = apiCache.middleware
 //
 // app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
 //   // do some work... this will only occur once per 5 minutes
@@ -30,5 +30,7 @@ router.get('/changeLog',  cache('15 minutes'), pgDb.getChangeLog)
 
 router.put('/updateNominal', pgDb.updateNominal)
 router.put('/updateConfigs', pgDb.updateConfigs)
+
+router.post('/postJob', pgDb.addJob)
 
 module.exports = router;

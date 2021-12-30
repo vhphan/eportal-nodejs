@@ -1,4 +1,5 @@
 const express = require('express');
+const socket = require('socket.io');
 const app = express();
 const port = 3001;
 const general = require('./routes/general');
@@ -8,8 +9,10 @@ const dotenv = require('dotenv')
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
 const format = require('pg-format');
+const {createListeners} = require("./db/utils");
+const {logger} = require("./middleware/logger");
 const {isObject} = require("./db/utils");
-
+const errorHandler = require('./middleware/error');
 const {createListener} = require("./db/utils");
 
 const result = dotenv.config({path: './.env'})
@@ -24,46 +27,54 @@ app.use('/node/public', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
 
+app.use(errorHandler);
 
-app.listen(port,
-    () => console.log(`listening on ${port}`)
+
+const server = app.listen(port,
+    () => {
+        console.log(`listening on ${port}`);
+        logger.info(
+            'test'
+        );
+    }
 );
 
-function createListeners() {
-    const pg = new PostgresBackend();
-    const client = pg.getClient();
-    createListener(client, 'db_change', async (data) => {
-        const payload = JSON.parse(data.payload);
-        const newVal = payload['new_val'];
-        const oldVal = payload['old_val'];
-        let parseResults = [];
+const socketServer = socket(
+    server,
+    {
+        cors: {
+            origin: '*',
+        },
+        path: '/node/socket.io'
+    }
+);
 
-        Object.entries(newVal).forEach(([key, val]) => {
-            if (val !== oldVal[key] && !isObject(val)) {
-                // parseResults.push({
-                //     table_name: payload['tabname'],
-                //     column_name: key,
-                //     old_value: oldVal[key],
-                //     new_value: val,
-                //     updated_by: newVal['last_user'],
-                //     time_stamp: payload['tstamp']
-                // })
-                parseResults.push([
-                    payload['tabname'],
-                    key,
-                    oldVal[key],
-                    val,
-                    newVal['last_user'],
-                    payload['tstamp']
-                ])
-            }
-        })
-        console.log(parseResults);
-        client.query(format('INSERT INTO logging.t_history_parsed (table_name, column_name, old_value, new_value, updated_by, time_stamp) VALUES %L', parseResults), [], (err, result) => {
-            console.log(err);
-            console.log(result);
-        });
+const pg = new PostgresBackend();
+const client = pg.getClient();
+
+socketServer.on('connection', (socket) => {
+    console.log(socket.id);
+    logger.info(`socket id = ${socket.id}`);
+    // upgradedServer.emit("broadcastMessage", data);
+    for (let i = 0; i <= 3; i++) {
+        setTimeout(() => {
+            socketServer.emit('broadcastMessage', {i});
+            logger.info(`emitting broadcastMessage i=${i}`)
+        }, i * 2000)
+    }
+    socket.on('sendingMessage', (data) => {
+        console.log(data);
     });
-}
 
-createListeners();
+    createListener(client, 'new_jobs', (data) => {
+        const payload = JSON.parse(data.payload);
+        socketServer.emit('broadcastMessage', payload);
+    });
+})
+
+createListeners(client);
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+    logger.error(`Error: ${err.message}`.red);
+});

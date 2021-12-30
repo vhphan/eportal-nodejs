@@ -1,3 +1,4 @@
+const PostgresBackend = require("./PostgresBackend");
 const dataToCSV = (dataList, headers) => {
 
     let allObjects = [];
@@ -40,9 +41,68 @@ const createListener = function (pgClient, eventName, callBack = null) {
 
 const isObject = (v) => typeof v === 'object' && v !== null;
 
+const createDbHistoryListener = (client) => {
+    createListener(client, 'db_change', async (data) => {
+        const payload = JSON.parse(data.payload);
+        const newVal = payload['new_val'];
+        const oldVal = payload['old_val'];
+        let parseResults = [];
+        let idObj = {};
+        // const idKeys = ['dnb_index', 'SiteName', 'SiteProjectName', 'SectorId', 'System', 'WorkplanID'];
+        const idKeys = ['dnb_index', 'SiteName', 'SiteProjectName', 'SectorId', 'System'];
+
+        idKeys.forEach(k => idObj[k] = null);
+        Object.entries(newVal).forEach(([key, val]) => {
+            if (idKeys.includes(key)) {
+                idObj[key] = val;
+            }
+        });
+        Object.entries(newVal).forEach(([key, val]) => {
+            if (val !== oldVal[key] && !isObject(val)) {
+                // parseResults.push({
+                //     table_name: payload['tabname'],
+                //     column_name: key,
+                //     old_value: oldVal[key],
+                //     new_value: val,
+                //     updated_by: newVal['last_user'],
+                //     time_stamp: payload['tstamp']
+                // })
+                parseResults.push([
+                    payload['tabname'],
+                    key,
+                    oldVal[key],
+                    val,
+                    newVal['last_user'],
+                    payload['tstamp'],
+                    idObj['dnb_index'],
+                    idObj['SiteName'],
+                    idObj['SiteProjectName'],
+                    idObj['SectorId'],
+                    idObj['System'],
+                    idObj['WorkplanID'],
+
+                ])
+            }
+        })
+        console.log(parseResults);
+        client.query(format('INSERT INTO logging.t_history_parsed (table_name, column_name, old_value, new_value, updated_by, time_stamp, dnb_index, "SiteName", "SiteProjectName", "SectorId", "System", "WorkplanID") VALUES %L', parseResults), [], (err, result) => {
+            console.log(err);
+            console.log(result);
+        });
+    });
+}
+// const createJobListener = (client, socketServer) => {
+//     createListener(client, 'new_jobs', async (data) => {
+//         const payload = JSON.parse(data.payload);
+//
+//     });
+// }
+
+
 module.exports = {
     dataToCSV,
     getCookies,
     createListener,
-    isObject
+    isObject,
+    createListeners: createDbHistoryListener
 }

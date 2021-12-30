@@ -1,14 +1,13 @@
 const {Client, Pool} = require('pg');
-import createSubscriber from "pg-listen";
-import dotenv from 'dotenv';
+const {createSubscriber} = require("pg-listen");
+const dotenv = require('dotenv');
 const result = dotenv.config();
 
 if (result.error) {
-  throw result.error;
+    throw result.error;
 }
 
 console.log('dotenv parsed', result.parsed);
-
 
 
 class PostgresBackend {

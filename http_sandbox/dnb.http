@@ -30,3 +30,81 @@ X-Requested-With: XMLHttpRequest
 API: {{API}}
 Accept: application/json
 #Cookie: API={{API}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+###
+
+### Send request with dynamic variables in request's body
+POST http://localhost:3001/node/dnb/postJob
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Content-Type: application/x-www-form-urlencoded
+
+id=999&value=content
+
+
+### Send request with dynamic variables in request's body
+POST http://localhost:3001/node/dnb/postJob
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Content-Type: application/json
+
+{
+  "status": "pending",
+  "jobInfo": {
+    "formulaFile": "eveepha",
+    "start": "2021-12-01",
+    "end": "2021-12-21",
+    "period": "d"
+  }
+}
+### Send request with dynamic variables in request's body
+POST https://api.eprojecttrackers.com/node/dnb/postJob
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Content-Type: application/json
+
+{
+  "status": "pending",
+  "jobInfo": {
+    "formulaFile": "eveepha",
+    "start": "2021-12-23",
+    "end": "2021-12-25",
+    "period": "d"
+  }
+}
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=test
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: application/json
+
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=csvData&table=nominal_view
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: plain/text
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=siteList
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: application/json
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=siteListV2
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: plain/text
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=cellKpiPlmn&cellName=DWKUL0131_N3_0320
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: plain/text
+
+###
+GET https://ndo-portal.eprojecttrackers.com/api/api.php?action=cellKpiPlmn?cellName=DBGBK1783_N3_0310
+X-Requested-With: XMLHttpRequest
+API: {{API}}
+Accept: application/json

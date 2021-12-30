@@ -8,4 +8,8 @@ function handler(req, res) {
 
 router.get('/', handler);
 
+router.get('/socket', function(req,res) {
+  res.sendfile('public/socket.html');
+});
+
 module.exports = router;

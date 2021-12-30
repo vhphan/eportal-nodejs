@@ -22,10 +22,6 @@ const getCurrentNominal = async (dnbIndex) => {
     return result.rows;
 };
 
-async function logChanges(dnbIndex, rowBeforeUpdate) {
-    const rowAfterUpdate = await getCurrentNominal(dnbIndex);
-}
-
 const updateNominal = asyncHandler(async (request, response) => {
     const {body} = request;
     const userName = request.headers['username'] || 'unknown';
@@ -56,7 +52,7 @@ const updateNominal = asyncHandler(async (request, response) => {
     pg.query(sqlQuery, sqlParams, (error, results) => {
         console.log('update executed');
         if (error) throw error;
-        response.status(200).json({result: 'success'});
+        response.status(200).json({success: true});
     });
 
 })
@@ -94,7 +90,7 @@ const updateConfigs = asyncHandler(async (request, response) => {
         if (error) {
             throw error
         }
-        response.status(200).json({result: 'success'});
+        response.status(200).json({success: true});
     });
 })
 
@@ -135,39 +131,50 @@ const dbFullViewData = async (request, response) => {
 }
 
 const getChangeLog = asyncHandler(async (request, response) => {
-    const {tableName} = request.query || 'all';
+    const tableName = request.query.tableName || 'all';
     let sqlQuery;
     if (tableName === 'all') {
-        sqlQuery = "SELECT * FROM logging.t_history";
+        sqlQuery = "SELECT * FROM logging.t_history_parsed";
     } else {
-        sqlQuery = "SELECT * FROM logging.t_history WHERE tabname=$1";
+        sqlQuery = "SELECT * FROM logging.t_history_parsed WHERE table_name=$1";
     }
 
-    pg.query(sqlQuery, [tableName], (error, results) => {
+    pg.query(sqlQuery, tableName === 'all' ? [] : [tableName], (error, results) => {
         console.log(results);
-        let parseResults = [];
-        results.forEach((result) => {
-            const newVal = result['new_val'];
-            const oldVal = result['old_val'];
-            Object.entries(newVal).forEach(([key, val]) => {
-                if (val !== oldVal[key] && !isObject(val)) {
-                    parseResults.push({
-                        table_name: result['tabname'],
-                        column_name: key,
-                        old_value: oldVal[key],
-                        new_value: val,
-                        updated_by: newVal['last_user'],
-                        time_stamp: result['tstamp']
-                    })
-                }
-            })
-        })
-
-        const finalResults = {}
-        response.status(200).json(parseResults);
+        response.status(200).json(results);
     });
 
 });
+
+const addJob = async (request, response) => {
+    const {body} = request;
+    const jobInfo = body['jobInfo'] || null;
+    if (jobInfo === null) {
+        response.status(500).json({
+            result: 'failure',
+            message: 'job info not received.',
+        });
+        return;
+    }
+    //INSERT INTO TABLE_NAME (column1, column2, column3,...columnN)
+    // VALUES (value1, value2, value3,...valueN);
+    const sqlQuery = "INSERT INTO public.jobs (" +
+        "job_info," +
+        "status" +
+        ") VALUES (" +
+        "$1, $2);";
+    const sqlParams = [
+        jobInfo,
+        'pending'
+    ];
+    await pg.setupPool();
+    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
+        if (error) {
+            throw error
+        }
+        response.status(200).json({success: true});
+    });
+}
 
 
 module.exports = {
@@ -175,5 +182,6 @@ module.exports = {
     updateNominal,
     updateConfigs,
     dbFullViewData,
-    getChangeLog
+    getChangeLog,
+    addJob
 }
