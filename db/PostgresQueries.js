@@ -2,6 +2,7 @@ const PostgresBackend = require("../db/PostgresBackend");
 const {getCookies} = require("./utils");
 const asyncHandler = require("../middleware/async");
 const {isObject} = require("./utils");
+const {use} = require("express/lib/router");
 const pg = new PostgresBackend();
 
 const getCellInfo = async (request, response) => {
@@ -177,11 +178,61 @@ const addJob = async (request, response) => {
 }
 
 
+const getTabulatorConfig = async (request, response) => {
+    const {userId} = request.query;
+    const {key} = request.query;
+    console.log(userId);
+    const sqlQuery = "SELECT * FROM dnb.rfdb.tabulator_config WHERE user_id=$1 and key like $2";
+    const sqlParams = [
+        userId, key
+    ];
+    pg.query(sqlQuery, sqlParams, (error, results) => {
+        if (error) throw error;
+        response.status(200).json(results);
+    });
+}
+
+const saveTabulatorConfig = async (request, response) => {
+    const {body} = request;
+    const userId = body['userId'];
+    const key = body['key'];
+    const value = body['value'];
+    const sqlQuery = "INSERT INTO dnb.rfdb.tabulator_config (user_id, key, value) VALUES (" +
+        "$1, $2, $3);";
+    const sqlParams = [
+        userId, key, value
+    ];
+    await pg.setupPool();
+    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
+        if (error) {
+            throw error
+        }
+        response.status(200).json({success: true});
+    });
+}
+
+const getGeoJSON = async (request, response) => {
+    const {system, region, size, onAir} = request.query;
+    const sql = "SELECT json_build_object(\n" +
+        "               'type', 'Feature',\n" +
+        "               'geometry', ST_AsGeoJSON(geom)::json,\n" +
+        "               'properties', json_build_object(\n" +
+        "                       'Cell Name', \"Cellname\",\n" +
+        "                       'SiteID', \"siteid\"\n" +
+        "                   )\n" +
+        "           ) as f\n" +
+        "FROM dnb.public.\"N7_cells\"\n" +
+        "WHERE \"Region\" = 'CENTRAL'";
+}
+
 module.exports = {
     getCellInfo,
     updateNominal,
     updateConfigs,
     dbFullViewData,
     getChangeLog,
-    addJob
+    addJob,
+    getGeoJSON,
+    saveTabulatorConfig,
+    getTabulatorConfig,
 }

@@ -23,10 +23,10 @@ if (result.error) {
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
-app.use('/node/public', general);
+app.use(express.static('static'));
+app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
-
 app.use(errorHandler);
 
 

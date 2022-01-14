@@ -1,0 +1,3 @@
+GET https://ndo-portal.eprojecttrackers.com/api/geojson/sectors.php?region=CENTRAL&system=L7&size=n&api=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b8834
+
+Accept: application/json

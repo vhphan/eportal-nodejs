@@ -33,4 +33,13 @@ router.put('/updateConfigs', pgDb.updateConfigs)
 
 router.post('/postJob', pgDb.addJob)
 
+router.route('/tabulatorConfig')
+    .get(pgDb.getTabulatorConfig)
+    .post(pgDb.saveTabulatorConfig)
+
+// router.route('testtest')
+//     .get(getHandler)
+//     .put(putHandler)
+//     .post(postHandler)
+
 module.exports = router;
