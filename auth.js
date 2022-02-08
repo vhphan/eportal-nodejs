@@ -1,8 +1,6 @@
 const MySQLBackend = require("./db/MySQLBackend");
 const {getCookies} = require("./db/utils");
 
-
-
 const checkApi = async (apiKey, operator) => {
     let mySQLBackend;
     let sqlQuery;
@@ -13,7 +11,7 @@ const checkApi = async (apiKey, operator) => {
             sqlQuery = "SELECT * FROM eproject_dnb.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
         case 'celcom':
-            sqlQuery =  "SELECT * FROM eproject_cm.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
+            sqlQuery = "SELECT * FROM eproject_cm.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
     }
     let numRows = await mySQLBackend.numRows(sqlQuery, [apiKey]);

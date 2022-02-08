@@ -6,6 +6,14 @@ Accept: application/json
 
 
 ###
+GET https://ndo-portal.eprojecttrackers.com/main.php?action=tabulatorPG&table=tblcellid2&view=1&boolOperand=AND&schema=rfdb&page=1&size=100
+X-Requested-With: XMLHttpRequest
+API: "df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b8834"
+Accept: application/json
+
+
+
+###
 GET http://localhost:3001/node/dnb/cellInfo?cellName={{cellName}}
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}

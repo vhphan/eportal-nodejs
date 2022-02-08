@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router()
 const fs = require('fs');
+const {error} = require("winston");
 
 function handler(req, res) {
     return res.send('Hello General');
@@ -31,7 +32,17 @@ router.get('/version', verHandler);
 router.get('/socket', function (req, res) {
     res.sendfile('static/socket.html');
 });
+
 router.get('/test', testHandler);
+
 router.get('/testGeoJSON', testGeoJSON);
+
+
+
+// router.route('testtest')
+//     .get(getHandler)
+//     .put(putHandler)
+//     .post(postHandler)
+
 
 module.exports = router;

@@ -5,7 +5,6 @@ const port = 3001;
 const general = require('./routes/general');
 const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
-const dotenv = require('dotenv')
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
 const format = require('pg-format');
@@ -14,8 +13,7 @@ const {logger} = require("./middleware/logger");
 const {isObject} = require("./db/utils");
 const errorHandler = require('./middleware/error');
 const {createListener} = require("./db/utils");
-
-const result = dotenv.config({path: './.env'})
+const result = require('dotenv').config({path: './.env'})
 
 if (result.error) {
     throw result.error
@@ -27,6 +25,18 @@ app.use(express.static('static'));
 app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
+
+// Proxy endpoints
+// app.use('/node/jlab2', createProxyMiddleware({
+//     changeOrigin: true,
+//     pathRewrite: {
+//         [`^/node/jlab2`]: '',
+//     },
+//     target: "https://stackoverflow.com/",
+//     ws: true
+//
+// }));
+
 app.use(errorHandler);
 
 
