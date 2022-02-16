@@ -38,10 +38,24 @@ function checkCache(callback) {
     }
 }
 
-const saveToCache = async (req, freshData) => {
+const saveToCacheGetRequest = async (req, freshData) => {
     const key = req.originalUrl.replace('/', '_');
     await redisConnect();
     await client.set(key, JSON.stringify(freshData), {EX: DEFAULT_EXPIRATION});
+};
+
+const saveToCacheKeyValue = async (key, value) => {
+    await redisConnect();
+    await client.set(key, JSON.stringify(value), {EX: DEFAULT_EXPIRATION});
+};
+
+const getCacheKeyValue = async (key) => {
+    await redisConnect();
+    const text = await client.get(key);
+    if (text !== null) {
+        return JSON.parse(text);
+    }
+    return false;
 };
 
 const checkCacheMiddleWare = async (req, res, next) => {
@@ -61,4 +75,4 @@ const checkCacheMiddleWare = async (req, res, next) => {
     }
 }
 
-module.exports = {checkCache, checkCacheMiddleWare, saveToCache}
+module.exports = {checkCache, checkCacheMiddleWare, saveToCache: saveToCacheGetRequest, saveToCacheKeyValue, getCacheKeyValue}

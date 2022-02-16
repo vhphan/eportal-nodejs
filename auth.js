@@ -1,10 +1,19 @@
 const MySQLBackend = require("./db/MySQLBackend");
 const {getCookies} = require("./db/utils");
+const {saveToCache, saveToCacheKeyValue, getCacheKeyValue} = require("./db/RedisBackend");
+const {logger} = require("./middleware/logger");
 
 const checkApi = async (apiKey, operator) => {
     let mySQLBackend;
     let sqlQuery;
     mySQLBackend = new MySQLBackend(operator);
+    let numRows;
+
+    numRows = await getCacheKeyValue(`${apiKey}-${operator}`)
+    if (numRows) {
+        logger.info('got the apiKey response from redis')
+        return !!numRows;
+    }
 
     switch (operator) {
         case 'dnb':
@@ -14,7 +23,8 @@ const checkApi = async (apiKey, operator) => {
             sqlQuery = "SELECT * FROM eproject_cm.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
     }
-    let numRows = await mySQLBackend.numRows(sqlQuery, [apiKey]);
+    numRows = await mySQLBackend.numRows(sqlQuery, [apiKey]);
+    saveToCacheKeyValue(`${apiKey}-${operator}`, numRows).then(()=>logger.info('saved apiKey response to redis'));
     return !!numRows;
 };
 
