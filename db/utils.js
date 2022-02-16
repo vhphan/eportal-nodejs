@@ -38,7 +38,6 @@ const createListener = function (pgClient, eventName, callBack = null) {
     });
 };
 
-
 const isObject = (v) => typeof v === 'object' && v !== null;
 
 const createDbHistoryListener = (client) => {

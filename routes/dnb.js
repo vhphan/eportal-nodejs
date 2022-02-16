@@ -7,6 +7,7 @@ const mysqlDb = require('../db/MySQLQueries');
 const apiCache = require('apicache');
 const {createListener} = require("../db/utils");
 const PostgresBackend = require("../db/PostgresBackend");
+const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
 //
 // let app = express()
 let cache = apiCache.middleware
@@ -24,19 +25,20 @@ function handler(req, res) {
 
 
 router.get('/', handler);
-router.get('/cellInfo',  cache('5 minutes'), pgDb.getCellInfo)
-router.get('/fullView',  cache('15 minutes'), pgDb.dbFullViewData)
-router.get('/changeLog',  cache('15 minutes'), pgDb.getChangeLog)
+router.get('/cellInfo', cache('5 minutes'), pgDb.getCellInfo);
+router.get('/fullView', cache('15 minutes'), pgDb.dbFullViewData);
+router.get('/changeLog', cache('15 minutes'), pgDb.getChangeLog);
 
-router.put('/updateNominal', pgDb.updateNominal)
-router.put('/updateConfigs', pgDb.updateConfigs)
+router.put('/updateNominal', pgDb.updateNominal);
+router.put('/updateConfigs', pgDb.updateConfigs);
 
-router.post('/postJob', pgDb.addJob)
+router.post('/postJob', pgDb.addJob);
 
 router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
-    .post(pgDb.saveTabulatorConfig)
+    .post(pgDb.saveTabulatorConfig);
 
+router.get('/tabulatorData', checkCacheMiddleWare , pgDb.getTabulatorData);
 // router.route('testtest')
 //     .get(getHandler)
 //     .put(putHandler)

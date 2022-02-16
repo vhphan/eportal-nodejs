@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router()
 const fs = require('fs');
 const {error} = require("winston");
+const {testQuery} = require("../db/PostgresQueries");
+const {checkCache} = require("../db/RedisBackend");
 
 function handler(req, res) {
     return res.send('Hello General');
@@ -37,6 +39,7 @@ router.get('/test', testHandler);
 
 router.get('/testGeoJSON', testGeoJSON);
 
+router.get('/testQuery', checkCache(testQuery));
 
 
 // router.route('testtest')

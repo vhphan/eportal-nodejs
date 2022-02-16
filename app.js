@@ -22,6 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
 app.use(express.static('static'));
+app.use(errorHandler);
 app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
@@ -37,7 +38,6 @@ app.use('/node/dnb', dnb);
 //
 // }));
 
-app.use(errorHandler);
 
 
 const server = app.listen(port,
@@ -86,5 +86,6 @@ createListeners(client);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-    logger.error(`Error: ${err.message}`.red);
+    logger.error(`Error: ${err.message}`);
+    console.log(err);
 });

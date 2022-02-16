@@ -3,7 +3,17 @@ const {getCookies} = require("./utils");
 const asyncHandler = require("../middleware/async");
 const {isObject} = require("./utils");
 const {use} = require("express/lib/router");
+const {response} = require("express");
+const {logger} = require("../middleware/logger");
+const {saveToCache} = require("./RedisBackend");
 const pg = new PostgresBackend();
+
+
+const testQuery = async () => {
+    const pool = await pg.setupPool();
+    const result = await pool.query("SELECT * FROM dnb.public.sites_on_air ORDER BY random() LIMIT 10", []);
+    return result.rows;
+};
 
 const getCellInfo = async (request, response) => {
     const {cellName} = request.query;
@@ -15,6 +25,7 @@ const getCellInfo = async (request, response) => {
         response.status(200).json(results.rows);
     })
 }
+
 
 const getCurrentNominal = async (dnbIndex) => {
     const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE dnb_index=$1";
@@ -177,7 +188,6 @@ const addJob = async (request, response) => {
     });
 }
 
-
 const getTabulatorConfig = async (request, response) => {
     const {userId} = request.query;
     const {key} = request.query;
@@ -225,6 +235,62 @@ const getGeoJSON = async (request, response) => {
         "WHERE \"Region\" = 'CENTRAL'";
 }
 
+const getTabulatorData = async (request, response, next) => {
+
+    const {page, size, schema, boolOperand, table, filters, sorters} = request.query;
+    const offset = size * (page - 1);
+    let filterArray = [];
+    let filterValues = [];
+    let i = 1;
+    if (filters) {
+
+        filters.forEach(f => {
+
+            if (typeof f['value'] === "object") {
+                if ('start' in f['value']) {
+                    filterArray.push(`${table}."${f['field']}" >= $${i++}`);
+                    filterValues.push(f['value']['start']);
+                }
+                if ('end' in f['value']) {
+                    filterArray.push(`${table}."${f['field']}" <= $${i++}`);
+                    filterValues.push(f['value']['end']);
+                }
+                return;
+            }
+
+            filterValues.push(`%${f['value']}%`);
+            filterArray.push(`${table}."${f['field']}" ${f['type'].replace('like', 'ilike')} $${i++}`);
+
+        })
+
+    }
+
+    const filterString = filterArray.join(boolOperand);
+
+    const sql = `SELECT *
+                 FROM dnb.${schema}.${table}
+                 WHERE TRUE
+                   AND ${filterString}
+                 LIMIT $${i++} OFFSET $${i++}`;
+
+    logger.info(sql);
+    logger.info([...filterValues, size, offset])
+    try {
+        const pool = await pg.setupPool();
+        const result = await pool.query(sql, [...filterValues, size, offset]);
+        let resultObj = {
+            data: result.rows,
+            count: result.rowCount,
+            last_page: Math.ceil(result.rowCount/size)
+        };
+        response.status(200).json(resultObj);
+        saveToCache(request, resultObj).then(r => {logger.info(`saved to cache ${request.originalUrl}`)});
+    } catch (e) {
+        next(e);
+    }
+
+}
+
 module.exports = {
     getCellInfo,
     updateNominal,
@@ -235,4 +301,6 @@ module.exports = {
     getGeoJSON,
     saveTabulatorConfig,
     getTabulatorConfig,
+    testQuery,
+    getTabulatorData
 }

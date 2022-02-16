@@ -7,7 +7,7 @@ if (result.error) {
     throw result.error;
 }
 
-console.log('dotenv parsed', result.parsed);
+// console.log('dotenv parsed', result.parsed);
 
 
 class PostgresBackend {
