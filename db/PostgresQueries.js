@@ -283,7 +283,7 @@ const getTabulatorData = async (request, response, next) => {
             count: result.rowCount,
             last_page: Math.ceil(result.rowCount/size)
         };
-        response.status(200).json(resultObj);
+        response.status(200).json({cache: false, ...resultObj});
         saveToCache(request, resultObj).then(r => {logger.info(`saved to cache ${request.originalUrl}`)});
     } catch (e) {
         next(e);

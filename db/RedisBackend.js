@@ -66,7 +66,7 @@ const checkCacheMiddleWare = async (req, res, next) => {
         const data = await client.get(key);
         if (data !== null) {
             logger.info('getting data from cache!')
-            return res.status(200).send(data);
+            return res.status(200).json({cache:true, ...JSON.parse(data)});
         }
         logger.info(`not found in cache, key=${key}`);
         next()

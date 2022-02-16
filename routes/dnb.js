@@ -8,9 +8,12 @@ const apiCache = require('apicache');
 const {createListener} = require("../db/utils");
 const PostgresBackend = require("../db/PostgresBackend");
 const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
+const redis = require("redis");
 //
 // let app = express()
 let cache = apiCache.middleware
+let cacheWithRedis = apiCache.options({ redisClient: redis.createClient(), debug: true }).middleware;
+
 //
 // app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
 //   // do some work... this will only occur once per 5 minutes
@@ -38,7 +41,8 @@ router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
     .post(pgDb.saveTabulatorConfig);
 
-router.get('/tabulatorData', checkCacheMiddleWare , pgDb.getTabulatorData);
+// router.get('/tabulatorData', checkCacheMiddleWare , pgDb.getTabulatorData);
+router.get('/tabulatorData', cacheWithRedis('5 minutes') , pgDb.getTabulatorData);
 // router.route('testtest')
 //     .get(getHandler)
 //     .put(putHandler)
