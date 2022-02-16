@@ -31,18 +31,16 @@ router.get('/', handler);
 router.get('/cellInfo', cache('5 minutes'), pgDb.getCellInfo);
 router.get('/fullView', cache('15 minutes'), pgDb.dbFullViewData);
 router.get('/changeLog', cache('15 minutes'), pgDb.getChangeLog);
-
 router.put('/updateNominal', pgDb.updateNominal);
 router.put('/updateConfigs', pgDb.updateConfigs);
-
 router.post('/postJob', pgDb.addJob);
-
 router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
     .post(pgDb.saveTabulatorConfig);
 
 // router.get('/tabulatorData', checkCacheMiddleWare , pgDb.getTabulatorData);
-router.get('/tabulatorData', cacheWithRedis('5 minutes') , pgDb.getTabulatorData);
+
+router.get('/tabulatorData', cacheWithRedis('15 minutes') , pgDb.getTabulatorData);
 // router.route('testtest')
 //     .get(getHandler)
 //     .put(putHandler)
