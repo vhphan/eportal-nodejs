@@ -1,4 +1,20 @@
 const PostgresBackend = require("./PostgresBackend");
+
+
+const roundJsonValues = (jsonArray) => {
+    return jsonArray.map(d1 => {
+        let d2 = {}
+        for (const [key, value] of Object.entries(d1)) {
+            if (typeof value === "number") {
+                d2[key] = parseFloat(value.toFixed(5));
+                continue;
+            }
+            d2[key] = value;
+        }
+        return d2;
+    })
+}
+
 const dataToCSV = (dataList, headers) => {
 
     let allObjects = [];
@@ -103,5 +119,6 @@ module.exports = {
     getCookies,
     createListener,
     isObject,
-    createListeners: createDbHistoryListener
+    createListeners: createDbHistoryListener,
+    roundJsonValues
 }

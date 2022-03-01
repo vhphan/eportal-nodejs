@@ -26,7 +26,6 @@ const getCellInfo = async (request, response) => {
     })
 }
 
-
 const getCurrentNominal = async (dnbIndex) => {
     const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE dnb_index=$1";
     const pool = await pg.setupPool();
@@ -242,10 +241,9 @@ const getTabulatorData = async (request, response, next) => {
     let filterArray = [];
     let filterValues = [];
     let i = 1;
+
     if (filters) {
-
         filters.forEach(f => {
-
             if (typeof f['value'] === "object") {
                 if ('start' in f['value']) {
                     filterArray.push(`${table}."${f['field']}" >= $${i++}`);
@@ -257,34 +255,47 @@ const getTabulatorData = async (request, response, next) => {
                 }
                 return;
             }
-
             filterValues.push(`%${f['value']}%`);
             filterArray.push(`${table}."${f['field']}" ${f['type'].replace('like', 'ilike')} $${i++}`);
+        })
+    }
+    let sorterArray = [];
+    if (sorters) {
+        sorters.forEach(sorter=>{
+            let field = sorter['field'];
+            let dir = sorter['dir'];
+            let quote = '"';
+            sorterArray.push(`${quote}${field}${quote} ${dir}`)
 
         })
-
     }
-
-    const filterString = filterArray.join(boolOperand);
+    const sorterString = sorterArray.length ? ` Order By ${sorterArray.join(', ')}` : '';
+    const filterString =  filterArray.length? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
 
     const sql = `SELECT *
-                 FROM dnb.${schema}.${table}
-                 WHERE TRUE
-                   AND ${filterString}
+                 FROM dnb.${schema}."${table}"
+                   ${filterString}
+                   ${sorterString}
                  LIMIT $${i++} OFFSET $${i++}`;
 
     logger.info(sql);
     logger.info([...filterValues, size, offset])
+    const sqlCount = `SELECT Count(*) as count FROM dnb.${schema}."${table}" ${filterString};`;
+
+
     try {
+
         const pool = await pg.setupPool();
         const result = await pool.query(sql, [...filterValues, size, offset]);
+        const countResult = await pool.query(sqlCount, filterValues);
         let resultObj = {
             data: result.rows,
-            count: result.rowCount,
+            count: countResult.rows[0].count,
             last_page: Math.ceil(result.rowCount/size)
         };
-        response.status(200).json({cache: false, ...resultObj});
-        saveToCache(request, resultObj).then(r => {logger.info(`saved to cache ${request.originalUrl}`)});
+        response.status(200).json(resultObj);
+        // response.status(200).json({cache: false, ...resultObj});
+        // saveToCache(request, resultObj).then(r => {logger.info(`saved to cache ${request.originalUrl}`)});
     } catch (e) {
         next(e);
     }

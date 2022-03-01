@@ -2,23 +2,18 @@ const express = require('express');
 const auth = require("../auth");
 const router = express.Router();
 const pgDb = require('../db/PostgresQueries');
-const mysqlDb = require('../db/MySQLQueries');
+const pgDbStats = require('../db/pgQueriesStats');
 
 const apiCache = require('apicache');
-const {createListener} = require("../db/utils");
-const PostgresBackend = require("../db/PostgresBackend");
-const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
+// const {createListener} = require("../db/utils");
+// const PostgresBackend = require("../db/PostgresBackend");
+// const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
 const redis = require("redis");
-//
-// let app = express()
+
+
 let cache = apiCache.middleware
 let cacheWithRedis = apiCache.options({ redisClient: redis.createClient(), debug: true }).middleware;
 
-//
-// app.get('/api/collection/:id?', cache('5 minutes'), (req, res) => {
-//   // do some work... this will only occur once per 5 minutes
-//   res.json({ foo: 'bar' })
-// })
 
 router.use(auth('dnb'))
 
@@ -38,12 +33,51 @@ router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
     .post(pgDb.saveTabulatorConfig);
 
-// router.get('/tabulatorData', checkCacheMiddleWare , pgDb.getTabulatorData);
+const onlyStatus200 = (req, res) => res.statusCode === 200;
 
-router.get('/tabulatorData', cacheWithRedis('15 minutes') , pgDb.getTabulatorData);
+const cache15m = cacheWithRedis('15 minutes', onlyStatus200);
+const cache12h = cacheWithRedis('12 hours', onlyStatus200);
+
+router.get('/tabulatorData', cache15m , pgDb.getTabulatorData);
+
 // router.route('testtest')
 //     .get(getHandler)
 //     .put(putHandler)
 //     .post(postHandler)
+
+router.get(
+    '/networkDailyNR',
+    cache15m,
+    pgDbStats.dailyNetworkQueryNR
+);
+
+router.get(
+    '/networkDailyLTE',
+    cache15m,
+    pgDbStats.dailyNetworkQueryLTE
+);
+
+router.get(
+    '/plmnDailyNR',
+    cache15m,
+    pgDbStats.dailyPlmnQueryNR
+);
+
+router.get(
+    '/plmnDailyLTE',
+    cache15m,
+    pgDbStats.dailyPlmnQueryLTE
+);
+
+router.get(
+    '/siteList',
+    cache12h,
+    pgDbStats.siteListQuery
+);
+
+router.get(
+    '/siteStats',
+    pgDbStats.siteStatsQuery
+);
 
 module.exports = router;

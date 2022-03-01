@@ -1,7 +1,21 @@
 const {Client, Pool} = require('pg');
 const {createSubscriber} = require("pg-listen");
 const dotenv = require('dotenv');
+const pg = require("pg");
 const result = dotenv.config();
+
+pg.types.setTypeParser(pg.types.builtins.FLOAT8, (value) => {
+    return parseFloat(value);
+});
+pg.types.setTypeParser(pg.types.builtins.NUMERIC, (value) => {
+    return parseFloat(value);
+});
+pg.types.setTypeParser(1114, function(stringValue) {
+  return stringValue;  //1114 for time without timezone type
+});
+pg.types.setTypeParser(1082, function(stringValue) {
+  return stringValue;  //1082 for date type
+});
 
 if (result.error) {
     throw result.error;

@@ -3,7 +3,7 @@ const {logger} = require("../middleware/logger");
 // const client = redis.createClient();
 // await client.redisConnect();
 // await client.ping();
-const DEFAULT_EXPIRATION = 3600;
+const DEFAULT_EXPIRATION = 60*5;
 const client = redis.createClient();
 
 client.on('error', (err) => console.log('Redis Client Error', err));
