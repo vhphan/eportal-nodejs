@@ -76,8 +76,33 @@ router.get(
 );
 
 router.get(
+    '/cellListNR',
+    cache12h,
+    pgDbStats.cellListNRQuery
+);
+
+router.get(
+    '/cellListLTE',
+    cache12h,
+    pgDbStats.cellListLTEQuery
+);
+
+router.get(
     '/siteStats',
     pgDbStats.siteStatsQuery
 );
+
+router.get(
+    '/plmnDailyCellNR',
+    cache15m,
+    pgDbStats.dailyPlmnCellQueryNR
+);
+
+router.get(
+    '/plmnDailyCellLTE',
+    cache15m,
+    pgDbStats.dailyPlmnCellQueryLTE
+);
+
 
 module.exports = router;

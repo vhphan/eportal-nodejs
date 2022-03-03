@@ -7,17 +7,37 @@ const {
     dailyPlmnLTE,
     siteList,
     dailySiteNR,
-    dailySiteLTE
+    dailySiteLTE,
+    cellListLTE,
+    cellListNR,
+    dailyPlmnCellNR,
+    dailyPlmnCellLTE,
 } = require("./dnbSqlQueries");
 const {roundJsonValues} = require("./utils");
 
-const getQueryAsJson = function (sql) {
+const getQueryAsJson = function (sql, params = []) {
     return async (request, response) => {
         const pool = await pg.setupPool();
-        const result = await pool.query(sql, []);
+        const result = await pool.query(sql, params);
         response.status(200).json(roundJsonValues(result.rows));
     };
 }
+
+const getCellQuery = function (sql) {
+    return async (request, response) => {
+
+        const {object} = request.query;
+        const params = object ? [`${object}`] : ['%'];
+
+        const pool = await pg.setupPool();
+        const result = await pool.query(sql, params);
+        response.status(200).json(roundJsonValues(result.rows));
+    };
+};
+
+
+
+
 
 const getSiteStats = function () {
     return async (request, response) => {
@@ -41,8 +61,11 @@ const dailyNetworkQueryLTE = getQueryAsJson(dailyNetworkLTE);
 const dailyPlmnQueryNR = getQueryAsJson(dailyPlmnNR);
 const dailyPlmnQueryLTE = getQueryAsJson(dailyPlmnLTE);
 const siteListQuery = getQueryAsJson(siteList);
+const cellListNRQuery = getCellQuery(cellListNR);
+const cellListLTEQuery = getCellQuery(cellListLTE);
 const siteStatsQuery = getSiteStats();
-
+const dailyPlmnCellQueryNR = getCellQuery(dailyPlmnCellNR)
+const dailyPlmnCellQueryLTE = getCellQuery(dailyPlmnCellLTE)
 
 module.exports = {
     dailyNetworkQueryNR,
@@ -50,5 +73,9 @@ module.exports = {
     dailyNetworkQueryLTE,
     dailyPlmnQueryLTE,
     siteListQuery,
-    siteStatsQuery
+    siteStatsQuery,
+    cellListLTEQuery,
+    cellListNRQuery,
+    dailyPlmnCellQueryNR,
+    dailyPlmnCellQueryLTE
 }

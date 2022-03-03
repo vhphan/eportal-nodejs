@@ -282,7 +282,6 @@ const getTabulatorData = async (request, response, next) => {
     logger.info([...filterValues, size, offset])
     const sqlCount = `SELECT Count(*) as count FROM dnb.${schema}."${table}" ${filterString};`;
 
-
     try {
 
         const pool = await pg.setupPool();
@@ -290,8 +289,8 @@ const getTabulatorData = async (request, response, next) => {
         const countResult = await pool.query(sqlCount, filterValues);
         let resultObj = {
             data: result.rows,
-            count: countResult.rows[0].count,
-            last_page: Math.ceil(result.rowCount/size)
+            count: parseInt(countResult.rows[0].count),
+            last_page: Math.ceil(countResult.rows[0]['count']/size)
         };
         response.status(200).json(resultObj);
         // response.status(200).json({cache: false, ...resultObj});
