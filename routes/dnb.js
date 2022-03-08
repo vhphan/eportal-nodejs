@@ -9,6 +9,7 @@ const apiCache = require('apicache');
 // const PostgresBackend = require("../db/PostgresBackend");
 // const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
 const redis = require("redis");
+const asyncHandler = require("../middleware/async");
 
 
 let cache = apiCache.middleware
@@ -48,61 +49,72 @@ router.get('/tabulatorData', cache15m , pgDb.getTabulatorData);
 router.get(
     '/networkDailyNR',
     cache15m,
-    pgDbStats.dailyNetworkQueryNR
+    asyncHandler(pgDbStats.dailyNetworkQueryNR)
 );
 
 router.get(
     '/networkDailyLTE',
     cache15m,
-    pgDbStats.dailyNetworkQueryLTE
+    asyncHandler(pgDbStats.dailyNetworkQueryLTE)
 );
 
 router.get(
     '/plmnDailyNR',
     cache15m,
-    pgDbStats.dailyPlmnQueryNR
+    asyncHandler(pgDbStats.dailyPlmnQueryNR)
 );
 
 router.get(
     '/plmnDailyLTE',
     cache15m,
-    pgDbStats.dailyPlmnQueryLTE
+    asyncHandler(pgDbStats.dailyPlmnQueryLTE)
 );
 
 router.get(
     '/siteList',
     cache12h,
-    pgDbStats.siteListQuery
+    asyncHandler(pgDbStats.siteListQuery)
 );
 
 router.get(
     '/cellListNR',
     cache12h,
-    pgDbStats.cellListNRQuery
+    asyncHandler(pgDbStats.cellListNRQuery)
 );
 
 router.get(
     '/cellListLTE',
     cache12h,
-    pgDbStats.cellListLTEQuery
+    asyncHandler(pgDbStats.cellListLTEQuery)
 );
 
 router.get(
     '/siteStats',
-    pgDbStats.siteStatsQuery
+    asyncHandler(pgDbStats.siteStatsQuery)
 );
 
 router.get(
     '/plmnDailyCellNR',
     cache15m,
-    pgDbStats.dailyPlmnCellQueryNR
+    asyncHandler(pgDbStats.dailyPlmnCellQueryNR)
 );
 
 router.get(
     '/plmnDailyCellLTE',
     cache15m,
-    pgDbStats.dailyPlmnCellQueryLTE
+    asyncHandler(pgDbStats.dailyPlmnCellQueryLTE)
 );
 
+router.get(
+   '/networkDailyNRCell',
+    cache15m,
+    asyncHandler(pgDbStats.dailyNetworkCellQueryNR)
+)
+
+router.get(
+   '/networkDailyLTECell',
+    cache15m,
+    asyncHandler(pgDbStats.dailyNetworkCellQueryLTE)
+)
 
 module.exports = router;
