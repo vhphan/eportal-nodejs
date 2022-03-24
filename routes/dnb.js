@@ -13,7 +13,7 @@ const asyncHandler = require("../middleware/async");
 
 
 let cache = apiCache.middleware
-let cacheWithRedis = apiCache.options({ redisClient: redis.createClient(), debug: true }).middleware;
+let cacheWithRedis = apiCache.options({redisClient: redis.createClient(), debug: true}).middleware;
 
 
 router.use(auth('dnb'))
@@ -37,9 +37,10 @@ router.route('/tabulatorConfig')
 const onlyStatus200 = (req, res) => res.statusCode === 200;
 
 const cache15m = cacheWithRedis('15 minutes', onlyStatus200);
+const cache30m = cacheWithRedis('30 minutes', onlyStatus200);
 const cache12h = cacheWithRedis('12 hours', onlyStatus200);
 
-router.get('/tabulatorData', cache15m , pgDb.getTabulatorData);
+router.get('/tabulatorData', cache15m, pgDb.getTabulatorData);
 
 // router.route('testtest')
 //     .get(getHandler)
@@ -106,15 +107,65 @@ router.get(
 );
 
 router.get(
-   '/networkDailyNRCell',
+    '/networkDailyNRCell',
     cache15m,
     asyncHandler(pgDbStats.dailyNetworkCellQueryNR)
 )
 
 router.get(
-   '/networkDailyLTECell',
+    '/networkDailyLTECell',
     cache15m,
     asyncHandler(pgDbStats.dailyNetworkCellQueryLTE)
+)
+
+
+router.get(
+    '/networkHourlyLTE',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyNetworkQueryLTE)
+)
+
+router.get(
+    '/networkHourlyLTECell',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyNetworkCellQueryLTE)
+)
+
+router.get(
+    '/networkHourlyNR',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyNetworkQueryNR)
+)
+
+router.get(
+    '/networkHourlyNRCell',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyNetworkCellQueryNR)
+)
+
+
+router.get(
+    '/plmnHourlyLTE',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyPlmnQueryLTE)
+)
+
+router.get(
+    '/plmnHourlyCellLTE',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyPlmnCellQueryLTE)
+)
+
+router.get(
+    '/plmnHourlyNR',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyPlmnQueryNR)
+)
+
+router.get(
+    '/plmnHourlyCellNR',
+    cache30m,
+    asyncHandler(pgDbStats.hourlyPlmnCellQueryNR)
 )
 
 module.exports = router;

@@ -56,7 +56,7 @@ class PostgresBackend {
         return new Client(this.config);
     }
 
-    query(query, queryParams, callback) {
+    query(sql, queryParams, callback) {
         const pool = this.setupPool();
         // const client = await pool.connect()
         // client.query(query, queryParams, (err, results) => {
@@ -70,7 +70,7 @@ class PostgresBackend {
         // })
         pool.connect((err, client, done) => {
             if (err) return callback(err);
-            client.query(query, queryParams, (err, results) => {
+            client.query(sql, queryParams, (err, results) => {
                 done()
                 if (err) {
                     console.error("ERROR: ", err)

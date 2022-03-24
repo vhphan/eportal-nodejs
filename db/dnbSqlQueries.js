@@ -68,7 +68,7 @@ FROM stats."FlexNRCELLCUDailyPLMN" t1
        "Erab Drop Call rate (sgNB)",
        "Intra-SgNB Pscell Change Success Rate",
        "Inter-SgNB PSCell Change Success Rate",
-       "Max of RRC Connected User (ENDC)",
+       t3."pmEbsRrcConnLevelMaxEnDc" as "Max of RRC Connected User (ENDC)",
        "DL User Throughput",
        "UL User Throughput",
        "DL Data Volume",
@@ -80,12 +80,17 @@ FROM stats."FlexNRCELLCUDailyPLMN" t1
        "UL QPSK%" as "UL QPSK %",
        "UL 16QAM%",
        "UL 64QAM%"
-FROM stats."FlexNRCELLCU" t1
-         LEFT JOIN stats."FlexNRCELLDU" t2
-    on t1."DATE_ID"= t2."DATE_ID" and
-       t1."NRCellCU"=t2."NRCellDU" and
-       t1."PLMN" = t2."PLMN" and
-       t1."NR_NAME" = t2."NR_NAME"    
+    FROM stats."FlexNRCELLCU" t1
+             LEFT JOIN stats."FlexNRCELLDU" t2
+        on t1."DATE_ID"= t2."DATE_ID" and
+           t1."NRCellCU"=t2."NRCellDU" and
+           t1."PLMN" = t2."PLMN" and
+           t1."NR_NAME" = t2."NR_NAME"
+    LEFT JOIN stats."FlexNRCELLCU_Patch" t3
+    on t1."DATE_ID"= t3."DATE_ID" and
+       t1."NRCellCU"=t3."NRCellCU" and
+       t1."PLMN" = t3."PLMN2" and
+       t1."NR_NAME" = t3."NR_NAME"
     WHERE t1."PLMN"<>'Overall' and
           "NRCellDU" like $1
 
@@ -490,7 +495,7 @@ ORDER BY t1."DATE_ID", t1."NR_NAME", t1."NRCellDU";
     
     "pmRrcConnLevelMaxEnDc"                                                                  as "Max of RRC Connected User (ENDC)",
     "pmActiveUeDlMax"                                                                        as "Max of Active User",
-    "Sum(pmRadioPuschTable1McsDistr) for" / nullif("Sum(pmRadioPuschTable2McsDistr) for", 0) as "Latency",
+    "Sum(pmRadioPuschTable1McsDistr) for" / nullif("Sum(pmRadioPuschTable2McsDistr) for", 0) as "Latency (only Radio interface)",
     ("pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") / nullif(
                ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam" + "pmMacHarqDlAck64Qam" +
                 "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam" + "pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" +

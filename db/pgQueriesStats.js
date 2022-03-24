@@ -14,16 +14,36 @@ const {
     dailyPlmnCellLTE,
     dailyNetworkCellNR,
     dailyNetworkCellLTE,
+
 } = require("./dnbSqlQueries");
+
+const {
+    hourlyNetworkCellLTE,
+    hourlyNetworkLTE,
+    hourlyPlmnCellLTE,
+    hourlyPlmnLTE,
+
+    hourlyPlmnNR,
+    hourlyNetworkNR,
+    hourlyNetworkCellNR,
+    hourlyPlmnCellNR,
+
+} = require("./dnbSqlQueriesHourly")
+
 const {roundJsonValues} = require("./utils");
 
-const getQueryAsJson = (function (sql, params = []) {
+const emptyPlaceHolder = async (req, res) => {
+    res.status(200).json([]);
+}
+
+
+const getQueryAsJson = function (sql, params = []) {
     return async (request, response) => {
         const pool = await pg.setupPool();
         const result = await pool.query(sql, params);
         response.status(200).json(roundJsonValues(result.rows));
     };
-})
+}
 
 const getCellQuery = function (sql, wildCard = false) {
     return async (request, response) => {
@@ -67,6 +87,16 @@ const dailyPlmnCellQueryLTE = getCellQuery(dailyPlmnCellLTE)
 const dailyNetworkCellQueryNR = getCellQuery(dailyNetworkCellNR)
 const dailyNetworkCellQueryLTE = getCellQuery(dailyNetworkCellLTE)
 
+const hourlyNetworkCellQueryLTE = getCellQuery(hourlyNetworkCellLTE)
+const hourlyNetworkQueryLTE = getQueryAsJson(hourlyNetworkLTE)
+const hourlyPlmnCellQueryLTE = getCellQuery(hourlyPlmnCellLTE)
+const hourlyPlmnQueryLTE = getQueryAsJson(hourlyPlmnLTE)
+
+const hourlyNetworkQueryNR = getQueryAsJson(hourlyNetworkNR);
+const hourlyPlmnQueryNR = getQueryAsJson(hourlyPlmnNR);
+const hourlyNetworkCellQueryNR = getCellQuery(hourlyNetworkCellNR);
+const hourlyPlmnCellQueryNR = getCellQuery(hourlyPlmnCellNR);
+
 module.exports = {
     dailyNetworkQueryNR,
     dailyPlmnQueryNR,
@@ -80,4 +110,14 @@ module.exports = {
     dailyPlmnCellQueryLTE,
     dailyNetworkCellQueryNR,
     dailyNetworkCellQueryLTE,
+
+    hourlyNetworkCellQueryLTE,
+    hourlyNetworkQueryLTE,
+    hourlyPlmnCellQueryLTE,
+    hourlyPlmnQueryLTE,
+
+    hourlyNetworkQueryNR,
+    hourlyNetworkCellQueryNR,
+    hourlyPlmnQueryNR,
+    hourlyPlmnCellQueryNR,
 }
