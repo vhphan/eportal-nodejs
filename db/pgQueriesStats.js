@@ -14,6 +14,7 @@ const {
     dailyPlmnCellLTE,
     dailyNetworkCellNR,
     dailyNetworkCellLTE,
+    formulas
 
 } = require("./dnbSqlQueries");
 
@@ -97,6 +98,8 @@ const hourlyPlmnQueryNR = getQueryAsJson(hourlyPlmnNR);
 const hourlyNetworkCellQueryNR = getCellQuery(hourlyNetworkCellNR);
 const hourlyPlmnCellQueryNR = getCellQuery(hourlyPlmnCellNR);
 
+const formulasQuery = getQueryAsJson(formulas);
+
 module.exports = {
     dailyNetworkQueryNR,
     dailyPlmnQueryNR,
@@ -120,4 +123,6 @@ module.exports = {
     hourlyNetworkCellQueryNR,
     hourlyPlmnQueryNR,
     hourlyPlmnCellQueryNR,
+
+    formulasQuery,
 }

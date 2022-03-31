@@ -10,6 +10,7 @@ const apiCache = require('apicache');
 // const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
 const redis = require("redis");
 const asyncHandler = require("../middleware/async");
+const download = require("../tools/chartDl");
 
 
 let cache = apiCache.middleware
@@ -36,6 +37,7 @@ router.route('/tabulatorConfig')
 
 const onlyStatus200 = (req, res) => res.statusCode === 200;
 
+const cacheLongTerm = cacheWithRedis('10 days', onlyStatus200);
 const cache15m = cacheWithRedis('15 minutes', onlyStatus200);
 const cache30m = cacheWithRedis('30 minutes', onlyStatus200);
 const cache12h = cacheWithRedis('12 hours', onlyStatus200);
@@ -167,5 +169,15 @@ router.get(
     cache30m,
     asyncHandler(pgDbStats.hourlyPlmnCellQueryNR)
 )
+
+router.get(
+    '/sampleChart',
+    download.getSampleChart())
+
+router.get(
+    '/formulas',
+    cacheLongTerm,
+    pgDbStats.formulasQuery)
+
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const statsSqlQueries = {
+    formulas: `SELECT * FROM stats.formulas;`,
 
     dailyNetworkNR: `SELECT "DATE_ID" as "time",
        'Network' as "object",
@@ -61,40 +62,40 @@ FROM stats."FlexNRCELLCUDailyPLMN" t1
          LEFT JOIN stats."FlexNRCELLDUDailyPLMN" t2 USING ("DATE_ID", "PLMN") ORDER BY "time";`,
 
     dailyPlmnCellNR: `
-    SELECT t1."DATE_ID" as "time",
+    
+        SELECT t1."DATE_ID"                  as "time",
            t1."NRCellCU",
-       t1."PLMN" as "object",
-       "ENDC SR",
-       "Erab Drop Call rate (sgNB)",
-       "Intra-SgNB Pscell Change Success Rate",
-       "Inter-SgNB PSCell Change Success Rate",
-       t3."pmEbsRrcConnLevelMaxEnDc" as "Max of RRC Connected User (ENDC)",
-       "DL User Throughput",
-       "UL User Throughput",
-       "DL Data Volume",
-       "UL Data Volume",
-       "DL QPSK%" as "DL QPSK %",
-       "DL 16QAM%",
-       "DL 64QAM%",
-       "DL 256QAM%",
-       "UL QPSK%" as "UL QPSK %",
-       "UL 16QAM%",
-       "UL 64QAM%"
-    FROM stats."FlexNRCELLCU" t1
-             LEFT JOIN stats."FlexNRCELLDU" t2
-        on t1."DATE_ID"= t2."DATE_ID" and
-           t1."NRCellCU"=t2."NRCellDU" and
-           t1."PLMN" = t2."PLMN" and
-           t1."NR_NAME" = t2."NR_NAME"
-    LEFT JOIN stats."FlexNRCELLCU_Patch" t3
-    on t1."DATE_ID"= t3."DATE_ID" and
-       t1."NRCellCU"=t3."NRCellCU" and
-       t1."PLMN" = t3."PLMN2" and
-       t1."NR_NAME" = t3."NR_NAME"
-    WHERE t1."PLMN"<>'Overall' and
-          "NRCellDU" like $1
-
-    ORDER BY "time";
+           t1."PLMN"                     as "object",
+           "ENDC SR",
+           "Erab Drop Call rate (sgNB)",
+           "Intra-SgNB Pscell Change Success Rate",
+           "Inter-SgNB PSCell Change Success Rate",
+           t3."pmEbsRrcConnLevelMaxEnDc" as "Max of RRC Connected User (ENDC)",
+           "DL User Throughput",
+           "UL User Throughput",
+           "DL Data Volume",
+           "UL Data Volume",
+           "DL QPSK%"                    as "DL QPSK %",
+           "DL 16QAM%",
+           "DL 64QAM%",
+           "DL 256QAM%",
+           "UL QPSK%"                    as "UL QPSK %",
+           "UL 16QAM%",
+           "UL 64QAM%"
+        FROM stats."FlexNRCELLCU" t1
+        , stats."FlexNRCELLDU" t2
+        , stats."FlexNRCELLCU_Patch" t3
+        WHERE t1."PLMN" <> 'Overall'
+        AND t1."NRCellCU" = $1
+        AND t2."NRCellDU" = $1
+        AND t3."NRCellCU" = $1
+        AND t1."DATE_ID" = t2."DATE_ID"
+        AND t1."NR_NAME" = t2."NR_NAME"
+        AND t1."PLMN" = t2."PLMN"
+        AND t3."DATE_ID" = t2."DATE_ID"
+        AND t3."NR_NAME" = t2."NR_NAME"
+        AND t3."PLMN2" = t2."PLMN"
+    ;
          `,
 
     dailyNetworkLTE: `
@@ -133,7 +134,7 @@ FROM stats."FlexNRCELLCUDailyPLMN" t1
        "Call Setup Success Rate",
        "Resource Block Utilizing Rate (DL)",
        "Resource Block Utilizing Rate (UL)",
-       " Average CQI ",
+       "Average CQI",
        "Avg PUSCH UL RSSI"
 FROM stats."NRCELLFDDDailyNetwork" t1
          LEFT JOIN stats."PRBCQIRSSITADailyNetwork" t2 USING ("DATE_ID") ORDER BY t1."DATE_ID" ;`,
@@ -171,41 +172,43 @@ FROM stats."FexEutrancellFDDDailyPLMN"
          `,
 
     dailyPlmnCellLTE: `
-    SELECT t1."DATE_ID" as "time",
-       t1."EUtranCellFDD",
-       t1."PLMN"    as "object",
-       "E-RAB Setup Success Rate (%)",
-       "Erab Drop Call rate",
-       "Intrafreq HOSR",
-       "UL BLER",
-       "DL User Throughput",
-       "UL User Throughput",
-       "DL Cell Throughput",
-       "UL Cell Throughput",
-       "DL Data Volume",
-       "UL Data Volume",
-       "Packet Loss (DL)",
-       "Packet Loss UL",
-       "Latency (only Radio interface)",
-       "DL QPSK %",
-       "DL 16QAM%",
-       "DL 64QAM%",
-       "DL 256QAM%",
-       "UL QPSK %",
-       "UL 16QAM%",
-       "UL 64QAM%",
-       "UL 256QAM%",
-       "E-RAB Setup Success Rate_non-GBR (%)",
-       "Max of RRC Connected User"
-
+        SELECT t1."DATE_ID" as "time",
+           t1."EUtranCellFDD",
+           t1."PLMN"    as "object",
+           "E-RAB Setup Success Rate (%)",
+           "Erab Drop Call rate",
+           "Intrafreq HOSR",
+           "UL BLER",
+           "DL User Throughput",
+           "UL User Throughput",
+           "DL Cell Throughput",
+           "UL Cell Throughput",
+           "DL Data Volume",
+           "UL Data Volume",
+           "Packet Loss (DL)",
+           "Packet Loss UL",
+           "Latency (only Radio interface)",
+           "DL QPSK %",
+           "DL 16QAM%",
+           "DL 64QAM%",
+           "DL 256QAM%",
+           "UL QPSK %",
+           "UL 16QAM%",
+           "UL 64QAM%",
+           "UL 256QAM%",
+           "E-RAB Setup Success Rate_non-GBR (%)",
+           "Max of RRC Connected User"
         FROM stats."FexEutrancellFDD" t1
-         INNER JOIN stats."Flex_ERAB_SSR_NonGBR" t2
-                         on t1."DATE_ID" = t2."DATE_ID" and t1."EUtranCellFDD" = t2."EUtranCellFDD" and
-                            t1."PLMN" = t2."PLMN"
-         INNER JOIN stats."FlexMaxRRCUsersPivot" t3
-                         on t1."DATE_ID" = t3."DATE_ID" and t1."EUtranCellFDD" = t3."EUtranCellFDD" and
-                            t1."PLMN" = t3."PLMN"
-        WHERE t1."PLMN"<>'Overall'  and t1."EUtranCellFDD" like $1
+        , stats."Flex_ERAB_SSR_NonGBR" t2
+        , stats."FlexMaxRRCUsersPivot" t3
+        WHERE t1."PLMN"<>'Overall'
+        and t1."EUtranCellFDD" = $1
+        and t2."EUtranCellFDD" = $1
+        and t3."EUtranCellFDD" = $1
+        and t1."DATE_ID" = t2."DATE_ID"
+        and t1."DATE_ID" = t3."DATE_ID"
+        and t1."PLMN" = t2."PLMN"
+        and t1."PLMN" = t3."PLMN"
     `,
 
     dailyNetworkCellNR: `
@@ -804,7 +807,7 @@ SELECT t1."time",
        ("pmAcBarringCsfbSpecAcPlmn3Distr") /
        nullif(("pmAcBarringCsfbSpecialAcDistr"), 0)                                         AS "Resource Block Utilizing Rate (UL)",
 
-       ("pmAcBarringMosSpecAcPlmn1Distr") / nullif(("pmAcBarringMosSpecAcPlmn2Distr"), 0)   AS " Average CQI ",
+       ("pmAcBarringMosSpecAcPlmn1Distr") / nullif(("pmAcBarringMosSpecAcPlmn2Distr"), 0)   AS "Average CQI",
 
        ("pmAcBarringModSpecAcPlmn3Distr") / nullif(("pmAcBarringModSpecialAcDistr"), 0)     AS "Avg PUSCH UL RSSI"
 FROM t1
