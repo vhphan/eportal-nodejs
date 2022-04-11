@@ -13,6 +13,8 @@ const {logger} = require("./middleware/logger");
 const {isObject} = require("./db/utils");
 const errorHandler = require('./middleware/error');
 const {createListener} = require("./db/utils");
+const {postgrestProxy} = require("./proxies/proxify");
+const {createProxyMiddleware} = require("http-proxy-middleware");
 const result = require('dotenv').config({path: './.env'})
 
 if (result.error) {
@@ -38,6 +40,15 @@ app.use('/node/dnb', dnb);
 //
 // }));
 
+// app.use('/node/pgr', );createProxyMiddleware({
+//     changeOrigin: true,
+//     prependPath: false,
+//     target: "http://localhost:3000",
+//     logLevel: 'debug',
+//     pathRewrite: {
+//         '^/node/pgr': '', // remove base path
+//     },
+// })
 
 
 const server = app.listen(port,

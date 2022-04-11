@@ -31,7 +31,7 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
-    "http-proxy-middleware": "^2.0.2",
+    "http-proxy-middleware": "^2.0.4",
     "nodemon": "^2.0.15"
   }
 }

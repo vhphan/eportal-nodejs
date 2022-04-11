@@ -44,18 +44,7 @@ const statsSqlQueriesHourly = {
         ORDER BY t1."DAY", t1."HOUR";
     `,
 
-    hourlyNetworkCellLTE: `
-        SELECT *
-        FROM stats_hourly."hourlyNetworkCellLTE"
-        WHERE "EUtranCellFDD" = $1
-        ;
-    `,
 
-    hourlyPlmnCellLTE: `
-        SELECT *
-        FROM stats_hourly."hourlyPlmnCellLTE"
-        WHERE "EUtranCellFDD" = $1
-    `,
 
     hourlyPlmnLTE: `
 
@@ -161,6 +150,22 @@ const statsSqlQueriesHourly = {
         FROM stats_hourly."FlexNRCELLCUHourlyPLMN" t1
                  LEFT JOIN stats_hourly."FlexNRCELLDUHourlyPLMN" t2 USING ("DAY", "HOUR", "PLMN")
         ORDER BY "time";
+    `,
+
+
+
+
+    hourlyNetworkCellLTE: `
+        SELECT *
+        FROM stats_hourly."hourlyNetworkCellLTE"
+        WHERE "EUtranCellFDD" = $1
+        ;
+    `,
+
+    hourlyPlmnCellLTE: `
+        SELECT *
+        FROM stats_hourly."hourlyPlmnCellLTE"
+        WHERE "EUtranCellFDD" = $1
     `,
 
     hourlyNetworkCellNR: `

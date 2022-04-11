@@ -44,20 +44,19 @@ const getSampleChart = function () {
     };
 }
 
-// const getSampleChartAsPng = function () {
-//     return async function (req, res) {
-//         const chart = sampleChart();
-//         let svg = chart.renderToSVGString();
-//         res.set('Content-Type', 'image/png');
-//         res.set('Content-disposition', 'attachment; filename=sample.png');
-//         let outputBuffer = await svg2png({
-//             input: svg,
-//             encoding: 'buffer',
-//             format: 'png',
-//         })
-//         res.send(new Buffer(outputBuffer));
-//     }
-// }
+const getSampleChartAsPng = function () {
+    return async function (req, res) {
+        const chart = sampleChart();
+        let img = new Image();
+        img.src = chart.getDataURL({
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+        });
+        res.set('Content-Type', 'image/png');
+        res.set('Content-disposition', 'attachment; filename=sample.png');
+
+    }
+}
 
 
 module.exports = {

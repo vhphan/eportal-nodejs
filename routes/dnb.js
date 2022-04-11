@@ -1,5 +1,4 @@
 const express = require('express');
-const auth = require("../auth");
 const router = express.Router();
 const pgDb = require('../db/PostgresQueries');
 const pgDbStats = require('../db/pgQueriesStats');
@@ -11,6 +10,8 @@ const apiCache = require('apicache');
 const redis = require("redis");
 const asyncHandler = require("../middleware/async");
 const download = require("../tools/chartDl");
+const {auth} = require("../auth");
+const {createProxyMiddleware} = require("http-proxy-middleware");
 
 
 let cache = apiCache.middleware
@@ -179,5 +180,16 @@ router.get(
     cacheLongTerm,
     pgDbStats.formulasQuery)
 
+let postgrestProxy = createProxyMiddleware({
+    changeOrigin: true,
+    prependPath: false,
+    target: "http://localhost:3000",
+    logLevel: 'debug',
+    pathRewrite: {
+        '^/node/dnb/pgr': '', // remove base path
+    },
+});
+
+router.all('/pgr/*', postgrestProxy);
 
 module.exports = router;

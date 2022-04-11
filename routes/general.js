@@ -14,9 +14,14 @@ function verHandler(req, res) {
 }
 
 function testHandler(req, res) {
-    console.log(new Buffer(req.headers.authorization.split(" ")[1], 'base64').toString())
+    try {
+        console.log(new Buffer(req.headers.authorization.split(" ")[1], 'base64').toString())
+    } catch (e) {
+        console.log(e);
+    }
     return res.json({success: true})
 }
+
 
 function testGeoJSON(req, res) {
     console.log(req);
@@ -39,7 +44,7 @@ router.get('/test', testHandler);
 
 router.get('/testGeoJSON', testGeoJSON);
 
-router.get('/testQuery', checkCache(testQuery));
+// router.get('/testQuery', checkCache(testQuery));
 
 
 // router.route('testtest')

@@ -212,91 +212,95 @@ FROM stats."FexEutrancellFDDDailyPLMN"
     `,
 
     dailyNetworkCellNR: `
-    SELECT t1."DATE_ID"        as "time",
-        "NRCellDU" as "object",
-       "Cell Availability",
-       "ENDC SR",
-       "E-RAB Block Rate",
-       "Erab Drop Call rate (sgNB)",
-       "Intra-SgNB Pscell Change Success Rate",
-       "Inter-SgNB PSCell Change Success Rate",
-       "Resource Block Utilizing Rate (DL)",
-       "Resource Block Utilizing Rate (UL)",
-       "Average CQI",
-       "UL BLER",
-       "Avg PUSCH UL RSSI",
-       "DL User Throughput",
-       "UL User Throughput",
-       "DL Cell Throughput",
-       "UL Cell Throughput",
-       "DL Data Volume",
-       "UL Data Volume",
-       "Max of RRC Connected User (ENDC)",
-       "Max of Active User",
-       "Latency",
-       "DL QPSK %",
-       "DL 16QAM%",
-       "DL 64QAM%",
-       "DL 256QAM%",
-       "UL QPSK %",
-       "UL 16QAM%",
-       "UL 64QAM%",
-       "UL 256QAM%",
-       "RRC Setup Success Rate (Signaling) (%)",
-       "gNobeB CPU Load",
-       "Packet Loss (DL)",
-       "Packet Loss UL" as "Packet Loss (UL)"
-FROM dnb.stats."DataTable" t1
-         LEFT JOIN dnb.stats."CPULoad" t2 on t1."NR_NAME"=t2."ERBS" and t1."DATE_ID"=t2."DATE_ID"
-         LEFT JOIN dnb.stats."PacketLoss" t3 on t1."NR_NAME"=t3."NE_NAME" and t1."DATE_ID"=t3."DATE_ID"
-WHERE "NRCellDU"=$1
-ORDER BY t1."DATE_ID", t1."NR_NAME", t1."NRCellDU";
+        SELECT t1."DATE_ID"     as "time",
+           "NRCellDU"       as "object",
+           "Cell Availability",
+           "ENDC SR",
+           "E-RAB Block Rate",
+           "Erab Drop Call rate (sgNB)",
+           "Intra-SgNB Pscell Change Success Rate",
+           "Inter-SgNB PSCell Change Success Rate",
+           "Resource Block Utilizing Rate (DL)",
+           "Resource Block Utilizing Rate (UL)",
+           "Average CQI",
+           "UL BLER",
+           "Avg PUSCH UL RSSI",
+           "DL User Throughput",
+           "UL User Throughput",
+           "DL Cell Throughput",
+           "UL Cell Throughput",
+           "DL Data Volume",
+           "UL Data Volume",
+           "Max of RRC Connected User (ENDC)",
+           "Max of Active User",
+           "Latency",
+           "DL QPSK %",
+           "DL 16QAM%",
+           "DL 64QAM%",
+           "DL 256QAM%",
+           "UL QPSK %",
+           "UL 16QAM%",
+           "UL 64QAM%",
+           "UL 256QAM%",
+           "RRC Setup Success Rate (Signaling) (%)",
+           "gNobeB CPU Load",
+           "Packet Loss (DL)",
+           "Packet Loss UL" as "Packet Loss (UL)"
+        FROM dnb.stats."DataTable" t1
+        , dnb.stats."CPULoad" t2
+        , dnb.stats."PacketLoss" t3
+        WHERE t1."NRCellDU" = $1
+        AND t1."NR_NAME" = t2."ERBS"
+        AND t1."NR_NAME" = t3."NE_NAME"
+        AND t1."DATE_ID" = t2."DATE_ID"
+        AND t1."DATE_ID" = t3."DATE_ID"
+        ;
     `,
 
     dailyNetworkCellLTE: `
-    SELECT t1."DATE_ID" as "time",
-       t1."EUtranCellFDD" as "object",
-       "RRC Setup Success Rate (Service) (%)",
-       "RRC Setup Success Rate (Signaling) (%)",
-       "Erab Drop Call rate",
-       "E-RAB Setup Success Rate (%)",
-       "Handover In Success Rate",
-       "UL BLER",
-       "UL User Throughput",
-       "DL Cell Throughput",
-       "UL Cell Throughput",
-       "Max of RRC Connected User",
-       "Max of Active User",
-       "Packet Loss (DL)",
-       "Packet Loss UL",
-       "Latency (only Radio interface)",
-       "DL QPSK %",
-       "DL 16QAM%",
-       "DL 64QAM%",
-       "DL 256QAM%",
-       "UL QPSK %",
-       "UL 16QAM%",
-       "UL 64QAM%",
-       "UL 256QAM%",
-       "DL User Throughput",
-       "DL Data Volume",
-       "UL Data Volume",
-       "Cell Availability",
-       "E-RAB Setup Success Rate_non-GBR (%)",
-       "VoLTE Redirection Success Rate",
-       "Intrafreq HOSR",
-       "Interfreq HOSR",
-       "Call Setup Success Rate",
-       "Resource Block Utilizing Rate (DL)",
-       "Resource Block Utilizing Rate (UL)",
-       "Average CQI",
-       "Avg PUSCH UL RSSI"
-    FROM stats."NRCELLFDD" t1
-             LEFT JOIN stats."PRBCQIRSSITA" t2
-    on t1."DATE_ID"=t2."DATE_ID" and t1."EUtranCellFDD"=t2."EUtranCellFDD" and t1."ERBS"=t2."ERBS"
-    WHERE t1."EUtranCellFDD"=$1
-    ORDER BY t1."DATE_ID"
-    
+        SELECT t1."DATE_ID"       as "time",
+           t1."EUtranCellFDD" as "object",
+           "RRC Setup Success Rate (Service) (%)",
+           "RRC Setup Success Rate (Signaling) (%)",
+           "Erab Drop Call rate",
+           "E-RAB Setup Success Rate (%)",
+           "Handover In Success Rate",
+           "UL BLER",
+           "UL User Throughput",
+           "DL Cell Throughput",
+           "UL Cell Throughput",
+           "Max of RRC Connected User",
+           "Max of Active User",
+           "Packet Loss (DL)",
+           "Packet Loss UL",
+           "Latency (only Radio interface)",
+           "DL QPSK %",
+           "DL 16QAM%",
+           "DL 64QAM%",
+           "DL 256QAM%",
+           "UL QPSK %",
+           "UL 16QAM%",
+           "UL 64QAM%",
+           "UL 256QAM%",
+           "DL User Throughput",
+           "DL Data Volume",
+           "UL Data Volume",
+           "Cell Availability",
+           "E-RAB Setup Success Rate_non-GBR (%)",
+           "VoLTE Redirection Success Rate",
+           "Intrafreq HOSR",
+           "Interfreq HOSR",
+           "Call Setup Success Rate",
+           "Resource Block Utilizing Rate (DL)",
+           "Resource Block Utilizing Rate (UL)",
+           "Average CQI",
+           "Avg PUSCH UL RSSI"
+        FROM stats."NRCELLFDD" t1,
+         stats."PRBCQIRSSITA" t2
+        WHERE t1."EUtranCellFDD" = $1
+        AND t2."EUtranCellFDD" = $1
+        AND t1."DATE_ID" = t2."DATE_ID"
+        AND t1."ERBS" = t2."ERBS";
     `,
 
     siteList: `SELECT "ERBS"
