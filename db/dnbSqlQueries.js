@@ -503,45 +503,45 @@ FROM stats."FexEutrancellFDDDailyPLMN"
     "pmRrcConnLevelMaxEnDc"                                                                  as "Max of RRC Connected User (ENDC)",
     "pmActiveUeDlMax"                                                                        as "Max of Active User",
     "Sum(pmRadioPuschTable1McsDistr) for" / nullif("Sum(pmRadioPuschTable2McsDistr) for", 0) as "Latency (only Radio interface)",
-    ("pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") / nullif(
+    100 * ("pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") / nullif(
                ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam" + "pmMacHarqDlAck64Qam" +
                 "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam" + "pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" +
-                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") * 100,
+                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk"),
                0)                                                                           as "DL QPSK %",
-    ("pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" + "pmMacHarqDlDtx16Qam") / nullif(
+    100 * ("pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" + "pmMacHarqDlDtx16Qam") / nullif(
                ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam" + "pmMacHarqDlAck64Qam" +
                 "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam" + "pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" +
-                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") * 100,
+                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk"),
                0)                                                                           as "DL 16QAM%",
-    ("pmMacHarqDlAck64Qam" + "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam") / nullif(
+    100 * ("pmMacHarqDlAck64Qam" + "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam") / nullif(
                ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam" + "pmMacHarqDlAck64Qam" +
                 "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam" + "pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" +
-                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") * 100,
+                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk"),
                0)                                                                           as "DL 64QAM%",
-    ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam") / nullif(
+    100 * ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam") / nullif(
                ("pmMacHarqDlAck256Qam" + "pmMacHarqDlNack256Qam" + "pmMacHarqDlDtx256Qam" + "pmMacHarqDlAck64Qam" +
                 "pmMacHarqDlNack64Qam" + "pmMacHarqDlDtx64Qam" + "pmMacHarqDlAck16Qam" + "pmMacHarqDlNack16Qam" +
-                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk") * 100,
+                "pmMacHarqDlDtx16Qam" + "pmMacHarqDlAckQpsk" + "pmMacHarqDlNackQpsk" + "pmMacHarqDlDtxQpsk"),
                0)                                                                           as "DL 256QAM%",
-    ("pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") / nullif(
+    100 * ("pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") / nullif(
                ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam" + "pmMacHarqUlAck64Qam" +
                 "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam" + "pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" +
-                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") * 100,
+                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk"),
                0)                                                                           as "UL QPSK %",
-    ("pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" + "pmMacHarqUlDtx16Qam") / nullif(
+    100 * ("pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" + "pmMacHarqUlDtx16Qam") / nullif(
                ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam" + "pmMacHarqUlAck64Qam" +
                 "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam" + "pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" +
-                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") * 100,
+                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk"),
                0)                                                                           as "UL 16QAM%",
-    ("pmMacHarqUlAck64Qam" + "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam") / nullif(
+    100 * ("pmMacHarqUlAck64Qam" + "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam") / nullif(
                ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam" + "pmMacHarqUlAck64Qam" +
                 "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam" + "pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" +
-                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") * 100,
+                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk"),
                0)                                                                           as "UL 64QAM%",
-    ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam") / nullif(
+    100 * ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam") / nullif(
                ("pmMacHarqUlAck256Qam" + "pmMacHarqUlNack256Qam" + "pmMacHarqUlDtx256Qam" + "pmMacHarqUlAck64Qam" +
                 "pmMacHarqUlNack64Qam" + "pmMacHarqUlDtx64Qam" + "pmMacHarqUlAck16Qam" + "pmMacHarqUlNack16Qam" +
-                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk") * 100,
+                "pmMacHarqUlDtx16Qam" + "pmMacHarqUlAckQpsk" + "pmMacHarqUlNackQpsk" + "pmMacHarqUlDtxQpsk"),
                0)                                                                           as "UL 256QAM%",
     100 * "pmRrcConnEstabSuccMos" /
     
@@ -551,7 +551,6 @@ FROM stats."FexEutrancellFDDDailyPLMN"
             100 * (("Sum(pmPdcpPktLossUlQos) for") - ("Sum(pmPdcpPktRecUlOooQos) for")) /
             (("Sum(pmPdcpPktRecUlQos) for") + ("Sum(pmPdcpPktLossUlToQos) for") -
              ("Sum(pmPdcpPktLossUlToDiscQos) for") - ("Sum(pmPdcpPktRecUlOooQos) for")) as "Packet Loss (UL)"
-    
     
     FROM t1
      inner join t2 USING (time, object)
