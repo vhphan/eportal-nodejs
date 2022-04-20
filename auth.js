@@ -81,10 +81,9 @@ const auth = (operator) => {
             return await checkBasicAuthHeader(operator, req, next, res);
         }
 
-        const apiKey = req.headers['API'] || req.headers['api'] || getCookies(req)['API'];
+        const apiKey = req.headers['API'] || req.headers['api'] || getCookies(req)['API'] || req.query['api'] || req.query['API'];
+
         if (!apiKey) {
-
-
             const err = new Error('No api key! You are not authenticated! Please login!')
             return res.status(401).json({
                 error: err.message

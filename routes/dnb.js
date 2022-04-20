@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pgDb = require('../db/PostgresQueries');
 const pgDbStats = require('../db/pgQueriesStats');
+const pgDbGeo = require('../db/pgQueriesGeo');
+const pgJs = require('../db/pgjs/PgJsQueries');
 
 const apiCache = require('apicache');
 // const {createListener} = require("../db/utils");
@@ -180,6 +182,11 @@ router.get(
     cacheLongTerm,
     pgDbStats.formulasQuery)
 
+router.get(
+    '/geojson',
+    cache30m,
+    pgDbGeo.getCells());
+
 let postgrestProxy = createProxyMiddleware({
     changeOrigin: true,
     prependPath: false,
@@ -191,5 +198,20 @@ let postgrestProxy = createProxyMiddleware({
 });
 
 router.all('/pgr/*', postgrestProxy);
+
+let geoServerProxy = createProxyMiddleware({
+    changeOrigin: true,
+    prependPath: false,
+    target: "http://localhost:8080",
+    logLevel: 'debug',
+    pathRewrite: {
+        '^/node/dnb/geoserver': '', // remove base path
+    },
+});
+
+router.all('/geoserver/*', geoServerProxy);
+
+router.get('/testQueryPGJS', pgJs.testQuery);
+
 
 module.exports = router;
