@@ -13,14 +13,14 @@ const getCells = function () {
                 geomCol = 'geom';
                 break;
             case 'xs':
-                geomCol = 'geometry_0.1';
+                geomCol = '"geometry_0.1"';
                 break;
             case 's':
-                geomCol = 'geometry_0.2';
+                geomCol = '"geometry_0.2"';
                 break;
             case 'm':
             default:
-                geomCol = 'geometry_0.5';
+                geomCol = '"geometry_0.5"';
                 break;
 
         }

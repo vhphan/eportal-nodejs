@@ -89,6 +89,7 @@ const auth = (operator) => {
                 error: err.message
             });
         }
+
         if (await checkApi(apiKey, operator)) {
             return next();
         } else {

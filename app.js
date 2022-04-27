@@ -1,3 +1,4 @@
+global.__basedir = __dirname;
 const express = require('express');
 const socket = require('socket.io');
 const app = express();
@@ -5,6 +6,7 @@ const port = 3001;
 const general = require('./routes/general');
 const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
+const tts = require('./tts/tts');
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
 const format = require('pg-format');
@@ -24,10 +26,11 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
 app.use(express.static('static'));
-app.use(errorHandler);
 app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
+app.use('/node/tts', tts);
+app.use(errorHandler);
 
 // Proxy endpoints
 // app.use('/node/jlab2', createProxyMiddleware({
@@ -98,5 +101,6 @@ createListeners(client);
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
     logger.error(`Error: ${err.message}`);
+    debugger;
     console.log(err);
 });

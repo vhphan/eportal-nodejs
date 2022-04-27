@@ -5,19 +5,13 @@ const pgDbStats = require('../db/pgQueriesStats');
 const pgDbGeo = require('../db/pgQueriesGeo');
 const pgJs = require('../db/pgjs/PgJsQueries');
 
-const apiCache = require('apicache');
-// const {createListener} = require("../db/utils");
-// const PostgresBackend = require("../db/PostgresBackend");
-// const {checkCache, checkCacheMiddleWare} = require("../db/RedisBackend");
 const redis = require("redis");
+
 const asyncHandler = require("../middleware/async");
 const download = require("../tools/chartDl");
 const {auth} = require("../auth");
 const {createProxyMiddleware} = require("http-proxy-middleware");
-
-
-let cache = apiCache.middleware
-let cacheWithRedis = apiCache.options({redisClient: redis.createClient(), debug: true}).middleware;
+const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/redisCache");
 
 
 router.use(auth('dnb'))
@@ -28,9 +22,9 @@ function handler(req, res) {
 
 
 router.get('/', handler);
-router.get('/cellInfo', cache('5 minutes'), pgDb.getCellInfo);
-router.get('/fullView', cache('15 minutes'), pgDb.dbFullViewData);
-router.get('/changeLog', cache('15 minutes'), pgDb.getChangeLog);
+router.get('/cellInfo', cache15m, pgDb.getCellInfo);
+router.get('/fullView', cache15m, pgDb.dbFullViewData);
+router.get('/changeLog', cache15m, pgDb.getChangeLog);
 router.put('/updateNominal', pgDb.updateNominal);
 router.put('/updateConfigs', pgDb.updateConfigs);
 router.post('/postJob', pgDb.addJob);
@@ -38,14 +32,7 @@ router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
     .post(pgDb.saveTabulatorConfig);
 
-const onlyStatus200 = (req, res) => res.statusCode === 200;
-
-const cacheLongTerm = cacheWithRedis('10 days', onlyStatus200);
-const cache15m = cacheWithRedis('15 minutes', onlyStatus200);
-const cache30m = cacheWithRedis('30 minutes', onlyStatus200);
-const cache12h = cacheWithRedis('12 hours', onlyStatus200);
-
-router.get('/tabulatorData', cache15m, pgDb.getTabulatorData);
+router.get('/tabulatorData', cache15m, asyncHandler(pgDb.getTabulatorData));
 
 // router.route('testtest')
 //     .get(getHandler)
@@ -213,5 +200,6 @@ router.all('/geoserver/*', geoServerProxy);
 
 router.get('/testQueryPGJS', pgJs.testQuery);
 
+router.get('/nbrRelation', pgJs.getNbrRelation);
 
 module.exports = router;
