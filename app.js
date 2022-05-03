@@ -58,7 +58,7 @@ const server = app.listen(port,
     () => {
         console.log(`listening on ${port}`);
         logger.info(
-            'test'
+            'starting server....'
         );
     }
 );
@@ -101,6 +101,5 @@ createListeners(client);
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
     logger.error(`Error: ${err.message}`);
-    debugger;
     console.log(err);
 });

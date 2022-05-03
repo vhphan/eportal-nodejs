@@ -2,6 +2,7 @@ const MySQLBackend = require("./db/MySQLBackend");
 const {getCookies} = require("./db/utils");
 const {saveToCache, saveToCacheKeyValue, getCacheKeyValue} = require("./db/RedisBackend");
 const {logger} = require("./middleware/logger");
+const mySQLBackend = require("./db/MySQLBackend");
 
 const checkApi = async (apiKey, operator) => {
     let mySQLBackend;
