@@ -30,4 +30,8 @@ router.get('/users', asyncHandler(ttsQueries.getUsers));
 
 router.put('/users/:id', asyncHandler(ttsQueries.updateUser));
 
+router.post('/task', asyncHandler(ttsQueries.createTask));
+
+router.get('/tasks', asyncHandler(ttsQueries.getTasks));
+
 module.exports = router;

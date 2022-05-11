@@ -20,6 +20,16 @@ async function getUser(email, password) {
 
 }
 
+async function getUserById(id) {
+    const result = await sql`SELECT * FROM dnb.tts.users WHERE id = ${id}`;
+    return result[0];
+}
+
+async function getUserByApi(apiKey) {
+    const result = await sql`SELECT * FROM dnb.tts.users WHERE api_key = ${apiKey}`;
+    return result[0];
+}
+
 const createStrongPassword = function () {
     var length = 10,
         charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*_|;,.<>?",
@@ -107,7 +117,8 @@ async function loginUser(request, response) {
             success: true,
             message: 'Login successful!',
             active: user.active,
-            apiKey: user['api_key']
+            apiKey: user['api_key'],
+            user: user
         });
     } else {
         response.status(403).json({success: false, message: 'Invalid email or password'});
@@ -118,7 +129,6 @@ function logoutUser(request, response) {
     request.session.destroy();
     response.status(200).json({success: true, message: 'Logged out'});
 }
-
 
 async function getUsers(request, response) {
     const results = await sql`
@@ -131,6 +141,7 @@ async function getUsers(request, response) {
        remarks,
        pm.admin_id,
        dt.pm_id,
+       active,
        CASE WHEN user_type = 'pm' THEN pm.asp_id 
             WHEN user_type = 'dt' THEN dt.asp_id
             ELSE NULL
@@ -141,34 +152,87 @@ FROM dnb.tts.users
          LEFT JOIN dnb.tts.pm ON dnb.tts.users.id = dnb.tts.pm.user_id
          LEFT JOIN dnb.tts.dt ON dnb.tts.users.id = dnb.tts.dt.user_id
 ;`;
-    response.status(200).json(results);
+    response.status(200).json({success: true, data: results, message: 'Users retrieved'});
 }
 
 async function updateUser(request, response) {
     const id = request.params.id;
+    const requestor = await getUserByApi(request.headers.api);
+    const requestorType = requestor.user_type;
+    const existingUserData = await getUserById(id);
+    const existingUserType = existingUserData.user_type;
+
+    if (requestorType !== 'admin' && existingUserType === 'admin') {
+        response.status(403).json({success: false, message: 'You cannot update an admin'});
+    }
+    if (requestorType === 'dt' && existingUserType === 'pm') {
+        response.status(403).json({success: false, message: 'You cannot update a PM'});
+    }
+    if (requestorType === 'dt' && existingUserType === 'dt') {
+        response.status(403).json({success: false, message: 'You cannot update a DT'});
+    }
+
     const {
         email,
         first_name: firstName,
         last_name: lastName,
-        userType: user_type,
+        user_type: userType,
         remarks,
-        adminId: admin_id,
-        pmId: pm_id,
-        aspId: asp_id
+        admin_id: adminId,
+        pm_id: pmId,
+        asp_id: aspId,
+        active
     } = request.body;
     const user = await sql`UPDATE dnb.tts.users
-                           SET email = ${email},
+                           SET email      = ${email},
                                first_name = ${firstName},
-                               last_name = ${lastName},
-                               user_type = ${userType},
-                               remarks = ${remarks}
+                               last_name  = ${lastName},
+                               user_type  = ${userType},
+                               remarks    = ${remarks},
+                               active     = ${active === 'true'}
                            WHERE id = ${id} returning *;`;
-    response.status(200).json(user);
+    response.status(200).json({success: true, message: 'User updated successfully!', data: user});
 }
 
+async function createTask(request, response) {
+    const requestor = await getUserByApi(request.headers.api);
+    const requestorType = requestor.user_type;
+    const requestorId = requestor.id;
+
+    if (requestorType === 'dt') {
+        response.status(403).json({success: false, message: 'You cannot create a task'});
+    }
+
+    const {
+        taskName,
+        taskType,
+        taskDescription,
+        taskPlanStartDate,
+        taskPlanEndDate,
+    } = request.body;
+
+    const task = await sql`INSERT INTO dnb.tts.tasks (task_name,
+                                                      task_type,
+                                                      task_description,
+                                                      task_plan_start_date,
+                                                      task_plan_end_date,
+                                                      created_by)
+                           VALUES (${taskName},
+                                   ${taskType},
+                                   ${taskDescription},
+                                   ${taskPlanStartDate},
+                                   ${taskPlanEndDate},
+                                   ${requestorId}) returning *;`;
+
+    response.status(200).json({success: true, message: 'Task created successfully!', data: task});
+}
+
+async function getTasks(request, response) {
+    const tasks = await sql`SELECT * FROM dnb.tts.tasks order by id desc;`;
+    response.status(200).json({success: true, message: 'Tasks fetched successfully!', data: tasks});
+}
 
 module.exports = {
-
     testQuery,
     createUser,
     getUser,
@@ -176,6 +240,7 @@ module.exports = {
     loginUser,
     logoutUser,
     getUsers,
-    updateUser
-
+    updateUser,
+    createTask,
+    getTasks,
 };

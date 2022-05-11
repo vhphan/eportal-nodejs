@@ -26,6 +26,7 @@ const checkApiKey = async (apiKey) => {
     }
 
     user = await ttsQueries.getUserByApiKey(apiKey);
+    if (!user) { return false; }
     if (user.length === 0) {
         return false;
     }
