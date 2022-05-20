@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 const sql = require('./PgJsBackend');
 const {logger} = require("../../middleware/logger");
+const {redisClient} = require("../../middleware/redisCache");
 const testQuery = async (request, response) => {
     response.status(200).json({result: 'success'});
 }
@@ -25,10 +26,24 @@ async function getUserById(id) {
     return result[0];
 }
 
+
 async function getUserByApi(apiKey) {
+    if (!redisClient.connected){
+        await redisClient.connect();
+    }
+    const cacheResult = await redisClient.get('usersApiKey:' + apiKey);
+    if (cacheResult) {
+        return JSON.parse(cacheResult);
+    }
     const result = await sql`SELECT * FROM dnb.tts.users WHERE api_key = ${apiKey}`;
+    redisClient.set('usersApiKey:' + apiKey, JSON.stringify(result[0])).then(() => {
+        console.log('set cache for usersApiKey:' + apiKey);
+    }).catch((e) => {
+        console.log(e);
+    });
     return result[0];
 }
+
 
 const createStrongPassword = function () {
     var length = 10,

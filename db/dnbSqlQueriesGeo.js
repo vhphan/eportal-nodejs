@@ -14,7 +14,7 @@ const sqlQueries = {
         FROM dnb.public."{{tech}}_cells" as cells
                  LEFT JOIN dnb.rest.tbl_cell_info as cell_info
                            on cells."Cellname" = cell_info."cellname"
-        WHERE "Region" = $1
+        WHERE "Region" = '{{region}}'
         AND "LATITUDE" IS NOT NULL
         AND "LONGITUDE" IS NOT NULL
         AND "LATITUDE" > 0

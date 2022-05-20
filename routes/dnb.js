@@ -4,7 +4,7 @@ const pgDb = require('../db/PostgresQueries');
 const pgDbStats = require('../db/pgQueriesStats');
 const pgDbGeo = require('../db/pgQueriesGeo');
 const pgJs = require('../db/pgjs/PgJsQueries');
-
+const compression = require('compression');
 const redis = require("redis");
 
 const asyncHandler = require("../middleware/async");
@@ -15,6 +15,7 @@ const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/red
 
 
 router.use(auth('dnb'))
+// router.use(compression);
 
 function handler(req, res) {
     return res.send('Hello dnb');
@@ -171,8 +172,9 @@ router.get(
 
 router.get(
     '/geojson',
-    cache30m,
-    pgDbGeo.getCells());
+    cache12h,
+    compression(),
+    asyncHandler(pgDbGeo.getCells));
 
 let postgrestProxy = createProxyMiddleware({
     changeOrigin: true,

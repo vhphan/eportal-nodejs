@@ -55,6 +55,7 @@ const auth = async (req, res, next) => {
     }
     const err = new Error('You are not authenticated! Please login!')
     return res.status(401).json({
+        success: false,
         error: err.message
     });
 

@@ -94,10 +94,11 @@ const auth = (operator) => {
         if (await checkApi(apiKey, operator)) {
             return next();
         } else {
-            const err = new Error('You are not authenticated! Please login!')
+            const err = new Error('Login Failed!')
             // err.status = 401
             // return next(err)
             return res.status(401).json({
+                success: false,
                 error: err.message
             });
         }
