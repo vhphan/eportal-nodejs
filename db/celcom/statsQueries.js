@@ -55,6 +55,46 @@ const getAggregatedStats = async (request, response) => {
 
 };
 
+const getAggregatedStatsWeek = async (request, response) => {
+    let {page, size, format, startWeek, startYear} = request.query;
+    page = page === undefined ? 1 : page;
+    size = size === undefined ? 1000 : size;
+    format = format === undefined ? 'csv' : 'json';
+
+    const totalRecords = startWeek === undefined ?
+        await sql`
+                SELECT COUNT(*) as k FROM celcom.stats.lte_aggregates_week WHERE "Week" is not null and "Week">='1' and "Year">=2022`
+        :
+        await sql`
+                SELECT COUNT(*) as k FROM celcom.stats.lte_aggregates_week WHERE "Week" is not null and "Week">=${startWeek} and "Year">=${startYear}`
+
+
+    const totalPages = Math.ceil(totalRecords[0]['k'] / size)
+
+
+    const results = startDate === undefined ? await sql`
+    SELECT * FROM celcom.stats.lte_aggregates_week WHERE "Week" is not null and "Week">='1' and "Year">=2022
+    LIMIT ${size} OFFSET ${(page - 1) * size}
+    `: await sql`
+    SELECT * FROM celcom.stats.lte_aggregates_week WHERE "Week" is not null and "Week">=${startWeek} and "Year">=${startYear}
+    ORDER BY "Date"
+    LIMIT ${size} OFFSET ${(page - 1) * size}
+    `
+
+
+    const {headers, values} = arrayToCsv(results);
+
+    response.status(200).json({
+        success: true,
+        headers: headers.join('\t'),
+        data: format === 'csv' ? values.join('\n') : results,
+        page,
+        size,
+        total_pages: totalPages,
+    });
+
+};
+
 const getCellStats = async (request, response) => {
 
     let {cell, format} = request.query;

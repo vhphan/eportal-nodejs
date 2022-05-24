@@ -20,6 +20,7 @@ router.get('/', handler);
 router.get('/2', handler2);
 
 router.get('/lte-stats/aggregate', asyncHandler(statsQueries.getAggregatedStats));
+router.get('/lte-stats/aggregateWeek', asyncHandler(statsQueries.getAggregatedStatsWeek));
 router.get('/lte-stats/cellStats', asyncHandler(statsQueries.getCellStats));
 router.get('/lte-stats/cellMapping', asyncHandler(statsQueries.getCellMapping));
 

@@ -15,14 +15,14 @@ const getCells = async (request, response) => {
             geomCol = 'cells.geom';
             break;
         case 'xs':
-            geomCol = 'cells."geometry_0_1"';
+            geomCol = 'cells.geometry_0_1';
             break;
         case 's':
-            geomCol = 'cells."geometry_0_2"';
+            geomCol = 'cells.geometry_0_2';
             break;
         case 'm':
         default:
-            geomCol = 'cells."geometry_0_5"';
+            geomCol = 'cells.geometry_0_5';
             break;
     }
     if (!['L7', 'N7', 'N3'].includes(system)) {
@@ -35,7 +35,7 @@ const getCells = async (request, response) => {
     // const result = await pool.query(sql, [region]);
     // const parsedRows = result.rows.map(row => row['f']);
     // logger.info(sqlQuery);
-    const tableName = `dnb.rfdb."${system}_cells"`
+    const tableName = 'dnb.rfdb.' + system.toLowerCase() + '_cells'
     const cellInfoTableName = system.startsWith('N') ? 'dnb.rfdb.tbl_5g_cell_info' : 'dnb.rfdb.tbl_4g_cell_info'
     const results = await sql`SELECT json_build_object(
                        'type', 'Feature',
@@ -47,15 +47,16 @@ const getCells = async (request, response) => {
                                'OnAir', status2 is not null
                            )
                    ) as f
-        FROM dnb.rfdb."N3_cells" as cells
-                 LEFT JOIN ${sql(cellInfoTableName)} as cell_info
+        FROM ${sql(tableName)} as cells
+                 INNER JOIN ${sql(cellInfoTableName)} as cell_info
                            on cells."Cellname" = cell_info."cellname"
         WHERE "Region" = ${region}
         AND "LATITUDE" IS NOT NULL
         AND "LONGITUDE" IS NOT NULL
         AND "LATITUDE" > 0
-        AND "LONGITUDE" > 0`
-    response.status(200).json({type: 'FeatureCollection', features: results});
+        AND "LONGITUDE" > 0 `;
+    console.log(results.length);
+    response.status(200).json({type: 'FeatureCollection', features: results.map(d=>d['f'])});
 }
 
 module.exports = {

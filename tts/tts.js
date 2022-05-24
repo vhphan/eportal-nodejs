@@ -26,12 +26,19 @@ router.post('/user', asyncHandler(ttsQueries.createUser));
 
 router.post('/login', asyncHandler(ttsQueries.loginUser));
 
+router.post('/loginUserWithApiKey', asyncHandler(ttsQueries.loginUserWithApiKey));
+
 router.get('/users', asyncHandler(ttsQueries.getUsers));
 
 router.put('/users/:id', asyncHandler(ttsQueries.updateUser));
+router.delete('/users/:id', asyncHandler(ttsQueries.deleteUser));
 
 router.post('/task', asyncHandler(ttsQueries.createTask));
+router.put('/task/:id', asyncHandler(ttsQueries.updateTask));
+router.delete('/task/:id', asyncHandler(ttsQueries.deleteTask));
 
 router.get('/tasks', asyncHandler(ttsQueries.getTasks));
+
+router.get('/sendTestEmail', asyncHandler(ttsQueries.sendTestEmail));
 
 module.exports = router;

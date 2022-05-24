@@ -173,7 +173,6 @@ router.get(
 router.get(
     '/geojson',
     cache12h,
-    compression(),
     asyncHandler(pgDbGeo.getCells));
 
 let postgrestProxy = createProxyMiddleware({
