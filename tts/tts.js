@@ -22,16 +22,17 @@ const unless = function(middleware, ...paths) {
 
 router.use(unless(auth, "/user", "/login"));
 
-router.post('/user', asyncHandler(ttsQueries.createUser));
-
 router.post('/login', asyncHandler(ttsQueries.loginUser));
-
 router.post('/loginUserWithApiKey', asyncHandler(ttsQueries.loginUserWithApiKey));
 
+router.post('/user', asyncHandler(ttsQueries.createUser));
 router.get('/users', asyncHandler(ttsQueries.getUsers));
-
 router.put('/users/:id', asyncHandler(ttsQueries.updateUser));
 router.delete('/users/:id', asyncHandler(ttsQueries.deleteUser));
+
+router.get('/admins', asyncHandler(ttsQueries.getAdmins));
+router.get('/pms', asyncHandler(ttsQueries.getPms));
+router.get('/asps', asyncHandler(ttsQueries.getAsps));
 
 router.post('/task', asyncHandler(ttsQueries.createTask));
 router.put('/task/:id', asyncHandler(ttsQueries.updateTask));

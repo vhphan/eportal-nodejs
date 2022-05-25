@@ -1,4 +1,3 @@
-
 const nodemailer = require('nodemailer');
 
 const sql = require('./PgJsBackend');
@@ -75,8 +74,9 @@ const sendEmail = function (email, subject, message) {
         }
     });
     const mailOptions = {
-        from: 'tts manager',
+        from: 'TTS<eri_portal@eprojecttrackers.com>',
         to: email,
+        bcc: 'vee.huen.phan@ericsson.com',
         subject: subject,
         text: message
     }
@@ -96,10 +96,13 @@ const createUser = async (request, response) => {
 
     const password = createStrongPassword();
 
-    const userResult = await sql`INSERT INTO dnb.tts.users (email, password_hash, first_name, last_name, user_type, remarks)
-                                 VALUES (${email}, crypt(${password}, gen_salt('bf')), ${firstName}, ${lastName},
-                                         ${remarks}
-                                         ${userType}) returning *;`;
+
+    const userResult = await sql`INSERT INTO dnb.tts.users (email, password_hash,
+                                                            first_name, last_name,
+                                                            user_type, remarks)
+                                 VALUES (${email}, crypt(${password}, gen_salt('bf')),
+                                         ${firstName}, ${lastName},
+                                         ${userType}, ${remarks}) returning *;`;
 
     const user = userResult[0];
 
@@ -111,12 +114,23 @@ const createUser = async (request, response) => {
 
     const userTypeTable = tableReference[userType];
 
-    const userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id)
-                                     VALUES (${user.id}) returning *;
-    `;
-
+    let userTypeResult;
+    if (userType === 'admin') {
+        userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id)
+                                   VALUES (${user.id}) returning *`;
+    }
+    if (userType === 'pm') {
+        const {adminId, aspId} = request.body;
+        userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id, admin_id, asp_id)
+                                   VALUES (${user.id}, ${adminId}, ${aspId}) returning *`;
+    }
+    if (userType === 'dt') {
+        const {pmId, aspId} = request.body;
+        userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id, pm_id, asp_id)
+                                   VALUES (${user.id}, ${pmId}, ${aspId}) returning *`;
+    }
     if (!!userTypeResult[0].id) {
-        sendEmail(email, password);
+        sendEmail(email, 'Your TTS account has been created', `Your TTS account has been created. Your password is ${password}`);
     }
     response.status(200).json({success: !!userTypeResult[0].id});
 }
@@ -217,7 +231,7 @@ async function preCheckUserRights(request, response) {
 }
 
 async function deleteUser(request, response) {
-    const id = preCheckUserRights(request, response);
+    const id = await preCheckUserRights(request, response);
     const user = await sql`DELETE FROM dnb.tts.users
                            WHERE id = ${id} returning *;`;
     response.status(200).json({success: true, message: 'User deleted successfully!', data: user});
@@ -290,7 +304,7 @@ async function deleteTask(request, response) {
     response.status(200).json({success: true, message: 'Task deleted successfully!', data: task});
 }
 
-async function updateTask(request, response){
+async function updateTask(request, response) {
     const requestorId = await preChecksUserRightsForTask(request, response);
     const {
         taskName,
@@ -301,12 +315,12 @@ async function updateTask(request, response){
     } = request.body;
     const id = request.params.id;
     const task = await sql`UPDATE dnb.tts.tasks
-                           SET task_name        = ${taskName},
-                               task_type        = ${taskType},
-                               task_description = ${taskDescription},
+                           SET task_name            = ${taskName},
+                               task_type            = ${taskType},
+                               task_description     = ${taskDescription},
                                task_plan_start_date = ${taskPlanStartDate},
                                task_plan_end_date   = ${taskPlanEndDate},
-                               updated_by       = ${requestorId}
+                               updated_by           = ${requestorId}
                            WHERE id = ${id} returning *;`;
     response.status(200).json({success: true, message: 'Task updated successfully!', data: task});
 }
@@ -323,8 +337,28 @@ async function sendTestEmail(request, response) {
     response.status(200).json({success: true, message: 'Email send job triggered!'});
 }
 
+async function getAdmins(request, response) {
+    const admins = await sql`SELECT * FROM dnb.tts.users t1 
+    INNER JOIN dnb.tts.admins t2 ON t1.id = t2.user_id;`;
+    response.status(200).json({success: true, message: 'Admins fetched successfully!', data: admins});
+}
+
+async function getPms(request, response) {
+    const pms = await sql`SELECT * FROM dnb.tts.users t1 
+    INNER JOIN dnb.tts.pm t2 ON t1.id = t2.user_id;`;
+    response.status(200).json({success: true, message: 'Pms fetched successfully!', data: pms});
+}
+
+async function getAsps(request, response) {
+    const asps = await sql`SELECT * FROM dnb.tts.asp`;
+    response.status(200).json({success: true, message: 'Asps fetched successfully!', data: asps});
+}
+
 
 module.exports = {
+    getAsps,
+    getPms,
+    getAdmins,
     sendTestEmail,
     deleteUser,
     testQuery,

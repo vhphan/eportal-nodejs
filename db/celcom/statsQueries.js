@@ -72,7 +72,7 @@ const getAggregatedStatsWeek = async (request, response) => {
     const totalPages = Math.ceil(totalRecords[0]['k'] / size)
 
 
-    const results = startDate === undefined ? await sql`
+    const results = startWeek === undefined ? await sql`
     SELECT * FROM celcom.stats.lte_aggregates_week WHERE "Week" is not null and "Week">='1' and "Year">=2022
     LIMIT ${size} OFFSET ${(page - 1) * size}
     `: await sql`
@@ -82,7 +82,7 @@ const getAggregatedStatsWeek = async (request, response) => {
     `
 
 
-    const {headers, values} = arrayToCsv(results);
+    const {headers, values} = arrayToCsv(results, false);
 
     response.status(200).json({
         success: true,
@@ -293,6 +293,7 @@ const getCellMapping = async (request, response) => {
 
 module.exports = {
     getAggregatedStats,
+    getAggregatedStatsWeek,
     getCellStats,
     getCellMapping
 };

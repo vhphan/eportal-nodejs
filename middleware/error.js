@@ -35,6 +35,10 @@ const errorHandler = (err, req, res, next) => {
     error = new ErrorResponse(message, 400);
   }
 
+  if (error.message === 'duplicate key value violates unique constraint "users_email_uindex"') {
+    error = new ErrorResponse('Email already in use', 400);
+  }
+
   res.status(error.statusCode || 500).json({
     success: false,
     error: error.message || 'Server Error',
