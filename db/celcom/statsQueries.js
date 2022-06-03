@@ -13,7 +13,7 @@ const arrayToCsv = (results, parseDate = true) => {
     return {headers, values};
 };
 
-const getAggregatedStats = async (request, response) => {
+const getAggregatedStats = (tech) =>  async (request, response) => {
 
     let {page, size, format, startDate, endDate} = request.query;
 
@@ -22,12 +22,21 @@ const getAggregatedStats = async (request, response) => {
     startDate = startDate === undefined ? '2022-04-01' : startDate;
     endDate = endDate === undefined ? '2022-12-31' : endDate;
     format = format === undefined ? 'csv' : 'json';
-
+    let table;
+    switch (tech) {
+        case 'GSM':
+            table = 'celcom.stats.gsm_aggregates';
+            break;
+        case 'LTE':
+        default:
+            table = 'celcom.stats.lte_aggregates';
+            break;
+    }
     let totalRecords = -1;
     let totalPages = -1;
     if (page === 1) {
         totalRecords = await sql`
-                SELECT COUNT(*) as k FROM celcom.stats.lte_aggregates WHERE "Date" is not null 
+                SELECT COUNT(*) as k FROM ${sql(table)} WHERE "Date" is not null 
                 and "Date">=${startDate}
                 and "Date"<=${endDate}
                 `
@@ -44,7 +53,7 @@ const getAggregatedStats = async (request, response) => {
     }
 
     const results = await sql`
-    SELECT * FROM celcom.stats.lte_aggregates WHERE "Date" is not null
+    SELECT * FROM ${sql(table)} WHERE "Date" is not null
     AND "Date" >= ${startDate}
     AND "Date" <= ${endDate}
     ORDER BY "Date", "id"
@@ -64,39 +73,49 @@ const getAggregatedStats = async (request, response) => {
 
 };
 
-const getAggregatedStatsWeek = async (request, response) => {
-        let {page, size, format, startWeek, startYear, endWeek, endYear} = request.query;
-        page = page === undefined ? 1 : parseInt(page);
-        size = size === undefined ? 1000 : parseInt(size);
-        format = format === undefined ? 'csv' : 'json';
-        startYear = startYear === undefined ? 2022 : parseInt(startYear);
-        endYear = endYear === undefined ? 2022 : parseInt(endYear);
-        startWeek = startWeek === undefined ? 1 : parseInt(startWeek);
-        endWeek = endWeek === undefined ? 52 : parseInt(endWeek);
-        let totalPages, totalRecords;
-        if (page === 1) {
-            totalRecords = await sql`
-                SELECT COUNT(*) as k FROM celcom.stats.lte_aggregates_week 
+const getAggregatedStatsWeek = (tech) => async (request, response) => {
+    let {page, size, format, startWeek, startYear, endWeek, endYear} = request.query;
+    page = page === undefined ? 1 : parseInt(page);
+    size = size === undefined ? 1000 : parseInt(size);
+    format = format === undefined ? 'csv' : 'json';
+    startYear = startYear === undefined ? 2022 : parseInt(startYear);
+    endYear = endYear === undefined ? 2022 : parseInt(endYear);
+    startWeek = startWeek === undefined ? 1 : parseInt(startWeek);
+    endWeek = endWeek === undefined ? 52 : parseInt(endWeek);
+    let table;
+    switch (tech) {
+        case 'GSM':
+            table = 'celcom.stats.gsm_aggregates_week';
+            break;
+        case 'LTE':
+        default:
+            table = 'celcom.stats.lte_aggregates_week';
+            break;
+    }
+    let totalPages, totalRecords;
+    if (page === 1) {
+        totalRecords = await sql`
+                SELECT COUNT(*) as k FROM ${sql(table)} 
                 WHERE "Week" is not null and "Year" is not null 
                 and "Week">= ${startWeek} and "Year">=${startYear}
                 and "Week"<= ${endWeek} and "Year" <=${endYear}
                 `
-            if (parseInt(totalRecords[0]['k']) === 0) {
-                response.status(404).send({
-                    success: false,
-                    error: 'No records found',
-                    data: [],
-                    totalPages: 0
-                });
-                return;
-            }
+        if (parseInt(totalRecords[0]['k']) === 0) {
+            response.status(404).send({
+                success: false,
+                error: 'No records found',
+                data: [],
+                totalPages: 0
+            });
+            return;
         }
+    }
 
-        totalPages = page === 1 ? Math.ceil(totalRecords[0]['k'] / size) : -1;
-        const results = await sql`
+    totalPages = page === 1 ? Math.ceil(totalRecords[0]['k'] / size) : -1;
+    const results = await sql`
             SELECT 
              *
-            FROM celcom.stats.lte_aggregates_week 
+            FROM ${sql(table)} 
             WHERE "Week" is not null and "Year" is not null
             and "Week">= ${startWeek} and "Year">=${startYear}
             and "Week"<= ${endWeek} and "Year" <=${endYear}
@@ -104,20 +123,20 @@ const getAggregatedStatsWeek = async (request, response) => {
             LIMIT ${size} OFFSET ${(page - 1) * size}
             `
 
-        const {headers, values} = arrayToCsv(results, false);
+    const {headers, values} = arrayToCsv(results, false);
 
-        response.status(200).json({
-            success: true,
-            headers: headers.join('\t'),
-            data: format === 'csv' ? values.join('\n') : results,
-            page,
-            size,
-            total_pages: totalPages,
-        });
+    response.status(200).json({
+        success: true,
+        headers: headers.join('\t'),
+        data: format === 'csv' ? values.join('\n') : results,
+        page,
+        size,
+        total_pages: totalPages,
+    });
 
-    };
+};
 
-const getCellStats = async (request, response) => {
+const getCellStats = (tech) => async (request, response) => {
 
     let {cell, format} = request.query;
     format = format === undefined ? 'csv' : 'json';
@@ -131,7 +150,73 @@ const getCellStats = async (request, response) => {
         })
     }
 
-    const results = await sql`
+    let results;
+    if (tech === 'GSM') {
+        results = await sql`
+                    SELECT "Week",
+                    "Date",
+                    "Days (#)",
+                    t2."Region",
+                    "BSC Id",
+                    "Cell Name",
+                    "SystemID",
+
+                    1 - (sum("G01_Availability Cell (%) Num")) /
+                    nullif(sum("G01_Availability Cell (%) Denom"), 0)                           AS "G01_Availability Cell (%)",
+                    sum("G02_Availability TCH (%) Num") /
+                    nullif(sum("G02_Availability TCH (%) Denom"), 0)                                AS "G02_Availability TCH (%)",
+                    (1 - (sum("G03_CSSR SD Block Nom1") / nullif(sum("G03_CSSR SD Block Denom1"), 0))) *
+                    (1 - (sum("G03_CSSR SD Drop Nom2") / nullif(sum("G03_CSSR SD Drop Denom2"), 0))) *
+                    (sum("G03_CSSR TCH Assign Fail Num3") /
+                    nullif(sum("G03_CSSR TCH Assign Fail Denom3"), 0))                             AS "G03_CSSR (%)",
+                    sum("G04_SD Blocked Rate (%) Num") /
+                    nullif(sum("G04_SD Blocked Rate (%) Denom"), 0)                                 AS "G04_SD Blocked Rate (%)",
+                    
+                    sum("G05_SD Drop Rate (%) Num") / nullif(sum("G05_SD Drop Rate (%) Denom"), 0)  AS "G05_SD Drop Rate (%)",
+                    sum("G06_TCH Blocked Rate (%) Num") /
+                    nullif(sum("G06_TCH Blocked Rate (%) Denom"), 0)                                AS "G06_TCH Blocked Rate (%)",
+                    
+                    Sum("G07_TCH Drop Rate (%) Num") / nullif(Sum("G07_TCH Drop Rate (%) Num"), 0)  AS "G07_TCH Drop Rate (%)",
+                    (1 - (sum("G08_PDCH Establishment SR (%) Num") /
+                    nullif(sum("G08_PDCH Establishment SR (%) Denom"), 0)))                   AS "G08_PDCH Establishment SR (%)",
+
+                    sum("G09_PDCH Congestion Rate (%) Num") /
+                    NULLIF(sum("G09_PDCH Congestion Rate (%) Denum"), 0)                            AS "G09_PDCH Congestion Rate (%)",
+                    SUM("G10_PDCH Block (#)")                                                       AS "G10_PDCH Block (#)",
+                    sum("G11_DL TBF Establishment SR (%) Num") /
+                    NULLIF(sum("G11_DL TBF Establishment SR (%) Denom"), 0)                         AS "G11_DL TBF Establishment SR (%)",
+                    sum("G12_UL TBF Establishment SR (%) Num") /
+                    nullif(sum("G12_UL TBF Establishment SR (%) Denom"), 0)                         AS "G12_UL TBF Establishment SR (%)",
+                    sum("G13_PS Drop Rate (%) Num") / nullif(sum("G13_PS Drop Rate (%) Denom"), 0)  AS "G13_PS Drop Rate (%)",
+                    sum("G14_PS Traffic (GBytes)")                                                  AS "G14_PS Traffic (GBytes)",
+                    SUM("G15_TCH Traffic (Erl)")                                                    AS "G15_TCH Traffic (Erl)",
+                    SUM("G16_SDCCH Traffic (Erl)")                                                  AS "G16_SDCCH Traffic (Erl)",
+                    sum("G17_Handover SR (%) Num") / nullif(sum("G17_Handover SR (%) Denom"), 0)    AS "G17_Handover SR (%)",
+                    SUM("G18_ICM Band 1 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G18_ICM Band 1 (%)",
+                    SUM("G19_ICM Band 2 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G19_ICM Band 2 (%)",
+                    SUM("G20_ICM Band 3 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G20_ICM Band 3 (%)",
+                    SUM("G21_ICM Band 4 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G21_ICM Band 4 (%)",
+                    SUM("G22_ICM Band 5 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G22_ICM Band 5 (%)",
+                    (sum("G20_ICM Band 3 (%) Num") + sum("G21_ICM Band 4 (%) Num") + sum("G22_ICM Band 5 (%) Num")) /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                                        AS "G23_Bad ICM (%)",
+                    sum("G25_Rx Qual DL Good (%) Num") / nullif(sum("G27_Rx Qual DL (#) Denom"), 0) AS "G25_Rx Qual DL Good (%)",
+                    sum("G26_Rx Qual DL Bad (%) Num") / nullif(sum("G27_Rx Qual DL (#) Denom"), 0)  AS "G26_Rx Qual DL Bad (%)",
+                    SUM("G28_Rx Qual UL Good (%) Num") / nullif(sum("G30_RxQual UL (#) Denom"), 0)  AS "G28_Rx Qual UL Good (%)",
+                    SUM("G29_Rx Qual UL Bad (%) Num") / nullif(sum("G30_RxQual UL (#) Denom"), 0)   AS "G29_Rx Qual UL Bad (%)",
+                    sum("G31_SQI Good DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)         AS "G31_SQI Good DL (%)",
+                    sum("G32_SQI Accpt DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)        AS "G32_SQI Accpt DL (%)",
+                    sum("G33_SQI Bad DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)          AS "G33_SQI Bad DL (%)",
+                    sum("G35_SQI Good UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)         AS "G35_SQI Good UL (%)",
+                    sum("G36_SQI Accpt UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)        AS "G36_SQI Accpt UL (%)",
+                    sum("G37_SQI Bad UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)          AS "G37_SQI Bad UL (%)"
+                    FROM celcom.stats.gsm_oss_raw_cell as t1
+                    LEFT JOIN celcom.stats.cell_mapping_gsm as t2
+                           ON t1."Cell Name" = t2."CELLname"
+                    WHERE t1."Cell Name"=${cell}
+                    GROUP BY "Week", "Date", "Days (#)", t2."Region", "BSC Id", "Cell Name", "SystemID"
+                `
+    } else {
+        results = await sql`
                 SELECT "Date",
                    t1."EUtranCellFDD",
                    
@@ -298,6 +383,7 @@ const getCellStats = async (request, response) => {
                 WHERE "EUtranCellFDD" = ${cell}
                 GROUP BY "Date", "EUtranCellFDD"
                 `
+    }
     const {headers, values} = arrayToCsv(results);
     return response.status(200).json({
         success: true,
@@ -306,12 +392,21 @@ const getCellStats = async (request, response) => {
     });
 };
 
-const getCellMapping = async (request, response) => {
+const getCellMapping = (tech) => async (request, response) => {
     let {format} = request.query;
     format = format === undefined ? 'csv' : 'json';
-
+    let table;
+    switch (tech) {
+        case 'GSM':
+            table = 'celcom.stats.cell_mapping_gsm';
+            break;
+        case 'LTE':
+        default:
+            table = 'celcom.stats.cell_mapping';
+            break;
+    }
     const results = await sql`
-    SELECT * FROM celcom.stats.cell_mapping
+    SELECT * FROM ${sql(table)}
     `;
     const {headers, values} = arrayToCsv(results, false);
     return response.status(200).json({
