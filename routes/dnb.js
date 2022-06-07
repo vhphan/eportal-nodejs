@@ -203,4 +203,10 @@ router.get('/testQueryPGJS', pgJs.testQuery);
 
 router.get('/nbrRelation', pgJs.getNbrRelation);
 
+router.get('/checkUser', async(req, res) => {
+    res.status(200).send({
+        success: true,
+    });
+})
+
 module.exports = router;
