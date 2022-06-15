@@ -138,8 +138,11 @@ const getAggregatedStatsWeek = (tech) => async (request, response) => {
 
 const getCellStats = (tech) => async (request, response) => {
 
-    let {cell, format} = request.query;
+    let {cell, format, startDate, endDate} = request.query;
+
     format = format === undefined ? 'csv' : 'json';
+    startDate = startDate === undefined ? '2022-01-01' : startDate;
+    endDate = endDate === undefined ? '2025-01-01' : endDate;
 
     if (cell === undefined) {
         const error = new Error('No cell name provided.')
@@ -162,57 +165,96 @@ const getCellStats = (tech) => async (request, response) => {
                     "SystemID",
 
                     1 - (sum("G01_Availability Cell (%) Num")) /
-                    nullif(sum("G01_Availability Cell (%) Denom"), 0)                           AS "G01_Availability Cell (%)",
+                    nullif(sum("G01_Availability Cell (%) Denom"), 0)               AS "G01_Availability Cell (%)",
                     sum("G02_Availability TCH (%) Num") /
-                    nullif(sum("G02_Availability TCH (%) Denom"), 0)                                AS "G02_Availability TCH (%)",
+                    nullif(sum("G02_Availability TCH (%) Denom"), 0)                    AS "G02_Availability TCH (%)",
                     (1 - (sum("G03_CSSR SD Block Nom1") / nullif(sum("G03_CSSR SD Block Denom1"), 0))) *
                     (1 - (sum("G03_CSSR SD Drop Nom2") / nullif(sum("G03_CSSR SD Drop Denom2"), 0))) *
                     (sum("G03_CSSR TCH Assign Fail Num3") /
-                    nullif(sum("G03_CSSR TCH Assign Fail Denom3"), 0))                             AS "G03_CSSR (%)",
+                    nullif(sum("G03_CSSR TCH Assign Fail Denom3"), 0))                 AS "G03_CSSR (%)",
                     sum("G04_SD Blocked Rate (%) Num") /
-                    nullif(sum("G04_SD Blocked Rate (%) Denom"), 0)                                 AS "G04_SD Blocked Rate (%)",
+                    nullif(sum("G04_SD Blocked Rate (%) Denom"), 0)                     AS "G04_SD Blocked Rate (%)",
                     
-                    sum("G05_SD Drop Rate (%) Num") / nullif(sum("G05_SD Drop Rate (%) Denom"), 0)  AS "G05_SD Drop Rate (%)",
-                    sum("G06_TCH Blocked Rate (%) Num") /
-                    nullif(sum("G06_TCH Blocked Rate (%) Denom"), 0)                                AS "G06_TCH Blocked Rate (%)",
+                    sum("G05_SD Drop Rate (%) Num") / nullif(sum("G05_SD Drop Rate (%) Denom"), 0) AS "G05_SD Drop Rate (%)",
                     
-                    Sum("G07_TCH Drop Rate (%) Num") / nullif(Sum("G07_TCH Drop Rate (%) Num"), 0)  AS "G07_TCH Drop Rate (%)",
-                    (1 - (sum("G08_PDCH Establishment SR (%) Num") /
-                    nullif(sum("G08_PDCH Establishment SR (%) Denom"), 0)))                   AS "G08_PDCH Establishment SR (%)",
-
-                    sum("G09_PDCH Congestion Rate (%) Num") /
-                    NULLIF(sum("G09_PDCH Congestion Rate (%) Denum"), 0)                            AS "G09_PDCH Congestion Rate (%)",
-                    SUM("G10_PDCH Block (#)")                                                       AS "G10_PDCH Block (#)",
+                    --     NEW KPI
+                    sum("G06_TCH Assignment SR (%) Num") /
+                    nullif(sum("G06_TCH Assignment SR (%) Denom"), 0)                   AS "G06_TCH Assignment SR (%)",
+                    
+                    --     UPDATED KPI
+                    sum("G07_TCH Blocked Rate (%) Num") /
+                    nullif(sum("G07_TCH Blocked Rate (%) Denom"), 0)                    AS "G07_TCH Blocked Rate (%)",
+                    --     UPDATED KPI
+                    sum("G08_TCH Drop Rate (%) Num") /
+                    nullif(sum("G08_TCH Drop Rate (%) Denom"), 0)                       AS "G08_TCH Drop Rate (%)",
+                    --     UPDATED KPI
+                    1 - sum("G09_PDCH Establishment SR (%) Num") /
+                    nullif(sum("G09_PDCH Establishment SR (%) Denom"), 0)           AS "G09_PDCH Establishment SR (%)",
+                    --     UPDATED KPI
+                    sum("G10_PDCH Congestion Rate (%) Num") /
+                    nullif(sum("G10_PDCH Congestion Rate (%) Denum"), 0)                AS "G10_PDCH Congestion Rate (%)",
+                    
+                    SUM("G10_PDCH Block (#)")                                           AS "G10_PDCH Block (#)",
+                    
                     sum("G11_DL TBF Establishment SR (%) Num") /
-                    NULLIF(sum("G11_DL TBF Establishment SR (%) Denom"), 0)                         AS "G11_DL TBF Establishment SR (%)",
+                    NULLIF(sum("G11_DL TBF Establishment SR (%) Denom"), 0)             AS "G11_DL TBF Establishment SR (%)",
+                    
                     sum("G12_UL TBF Establishment SR (%) Num") /
-                    nullif(sum("G12_UL TBF Establishment SR (%) Denom"), 0)                         AS "G12_UL TBF Establishment SR (%)",
-                    sum("G13_PS Drop Rate (%) Num") / nullif(sum("G13_PS Drop Rate (%) Denom"), 0)  AS "G13_PS Drop Rate (%)",
-                    sum("G14_PS Traffic (GBytes)")                                                  AS "G14_PS Traffic (GBytes)",
-                    SUM("G15_TCH Traffic (Erl)")                                                    AS "G15_TCH Traffic (Erl)",
-                    SUM("G16_SDCCH Traffic (Erl)")                                                  AS "G16_SDCCH Traffic (Erl)",
-                    sum("G17_Handover SR (%) Num") / nullif(sum("G17_Handover SR (%) Denom"), 0)    AS "G17_Handover SR (%)",
-                    SUM("G18_ICM Band 1 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G18_ICM Band 1 (%)",
-                    SUM("G19_ICM Band 2 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G19_ICM Band 2 (%)",
-                    SUM("G20_ICM Band 3 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G20_ICM Band 3 (%)",
-                    SUM("G21_ICM Band 4 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G21_ICM Band 4 (%)",
-                    SUM("G22_ICM Band 5 (%) Num") / nullif(sum("G24_ICM Band (#) Denom"), 0)        AS "G22_ICM Band 5 (%)",
+                    nullif(sum("G12_UL TBF Establishment SR (%) Denom"), 0)             AS "G12_UL TBF Establishment SR (%)",
+                    
+                    sum("G13_PS Drop Rate (%) Num") /
+                    nullif(sum("G13_PS Drop Rate (%) Denom"), 0)                        AS "G13_PS Drop Rate (%)",
+                    
+                    --     NEW KPI
+                    sum("G13_DL TBF Drop Rate (%) Num") /
+                    nullif(sum("G13_DL TBF Drop Rate (%) Denom"), 0)                    as "G13_DL TBF Drop Rate (%)",
+                    
+                    sum("G14_PS Traffic (GBytes)")                                      AS "G14_PS Traffic (GBytes)",
+                    SUM("G15_TCH Traffic (Erl)")                                        AS "G15_TCH Traffic (Erl)",
+                    SUM("G16_SDCCH Traffic (Erl)")                                      AS "G16_SDCCH Traffic (Erl)",
+                    sum("G17_Handover SR (%) Num") /
+                    nullif(sum("G17_Handover SR (%) Denom"), 0)                         AS "G17_Handover SR (%)",
+                    SUM("G18_ICM Band 1 (%) Num") /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G18_ICM Band 1 (%)",
+                    SUM("G19_ICM Band 2 (%) Num") /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G19_ICM Band 2 (%)",
+                    SUM("G20_ICM Band 3 (%) Num") /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G20_ICM Band 3 (%)",
+                    SUM("G21_ICM Band 4 (%) Num") /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G21_ICM Band 4 (%)",
+                    SUM("G22_ICM Band 5 (%) Num") /
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G22_ICM Band 5 (%)",
                     (sum("G20_ICM Band 3 (%) Num") + sum("G21_ICM Band 4 (%) Num") + sum("G22_ICM Band 5 (%) Num")) /
-                    nullif(sum("G24_ICM Band (#) Denom"), 0)                                        AS "G23_Bad ICM (%)",
-                    sum("G25_Rx Qual DL Good (%) Num") / nullif(sum("G27_Rx Qual DL (#) Denom"), 0) AS "G25_Rx Qual DL Good (%)",
-                    sum("G26_Rx Qual DL Bad (%) Num") / nullif(sum("G27_Rx Qual DL (#) Denom"), 0)  AS "G26_Rx Qual DL Bad (%)",
-                    SUM("G28_Rx Qual UL Good (%) Num") / nullif(sum("G30_RxQual UL (#) Denom"), 0)  AS "G28_Rx Qual UL Good (%)",
-                    SUM("G29_Rx Qual UL Bad (%) Num") / nullif(sum("G30_RxQual UL (#) Denom"), 0)   AS "G29_Rx Qual UL Bad (%)",
-                    sum("G31_SQI Good DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)         AS "G31_SQI Good DL (%)",
-                    sum("G32_SQI Accpt DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)        AS "G32_SQI Accpt DL (%)",
-                    sum("G33_SQI Bad DL (%) Num") / nullif(sum("G34_SQI DL (#) Denom"), 0)          AS "G33_SQI Bad DL (%)",
-                    sum("G35_SQI Good UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)         AS "G35_SQI Good UL (%)",
-                    sum("G36_SQI Accpt UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)        AS "G36_SQI Accpt UL (%)",
-                    sum("G37_SQI Bad UL (%) Num") / nullif(sum("G38_SQI UL (#) Denom"), 0)          AS "G37_SQI Bad UL (%)"
+                    nullif(sum("G24_ICM Band (#) Denom"), 0)                            AS "G23_Bad ICM (%)",
+                    sum("G25_Rx Qual DL Good (%) Num") /
+                    nullif(sum("G27_Rx Qual DL (#) Denom"), 0)                          AS "G25_Rx Qual DL Good (%)",
+                    sum("G26_Rx Qual DL Bad (%) Num") /
+                    nullif(sum("G27_Rx Qual DL (#) Denom"), 0)                          AS "G26_Rx Qual DL Bad (%)",
+                    SUM("G28_Rx Qual UL Good (%) Num") /
+                    nullif(sum("G30_RxQual UL (#) Denom"), 0)                           AS "G28_Rx Qual UL Good (%)",
+                    SUM("G29_Rx Qual UL Bad (%) Num") /
+                    nullif(sum("G30_RxQual UL (#) Denom"), 0)                           AS "G29_Rx Qual UL Bad (%)",
+                    sum("G31_SQI Good DL (%) Num") /
+                    nullif(sum("G34_SQI DL (#) Denom"), 0)                              AS "G31_SQI Good DL (%)",
+                    sum("G32_SQI Accpt DL (%) Num") /
+                    nullif(sum("G34_SQI DL (#) Denom"), 0)                              AS "G32_SQI Accpt DL (%)",
+                    sum("G33_SQI Bad DL (%) Num") /
+                    nullif(sum("G34_SQI DL (#) Denom"), 0)                              AS "G33_SQI Bad DL (%)",
+                    sum("G35_SQI Good UL (%) Num") /
+                    nullif(sum("G38_SQI UL (#) Denom"), 0)                              AS "G35_SQI Good UL (%)",
+                    sum("G36_SQI Accpt UL (%) Num") /
+                    nullif(sum("G38_SQI UL (#) Denom"), 0)                              AS "G36_SQI Accpt UL (%)",
+                    sum("G37_SQI Bad UL (%) Num") /
+                    nullif(sum("G38_SQI UL (#) Denom"), 0)                              AS "G37_SQI Bad UL (%)",
+                    
+                    --     NEW KPI
+                    sum("G39_2G to 4G Fast Return (#)")                                 as "G39_2G to 4G Fast Return (#)"
                     FROM celcom.stats.gsm_oss_raw_cell as t1
                     LEFT JOIN celcom.stats.cell_mapping_gsm as t2
                            ON t1."Cell Name" = t2."CELLname"
                     WHERE t1."Cell Name"=${cell}
+                    AND "Date" >=${startDate}
+                    AND "Date" <=${endDate}
                     GROUP BY "Week", "Date", "Days (#)", t2."Region", "BSC Id", "Cell Name", "SystemID"
                 `
     } else {
@@ -381,6 +423,8 @@ const getCellStats = (tech) => async (request, response) => {
                      LEFT JOIN celcom.stats.cell_mapping as t2
                                ON t1."EUtranCellFDD"=t2."CELLname"
                 WHERE "EUtranCellFDD" = ${cell}
+                    AND "Date" >=${startDate}
+                    AND "Date" <=${endDate}
                 GROUP BY "Date", "EUtranCellFDD"
                 `
     }
@@ -418,10 +462,13 @@ const getCellMapping = (tech) => async (request, response) => {
 };
 
 const getGroupedCellsStats = (tech) => async (request, response) => {
-    let {cells, format, clusterName} = request.query;
-    console.log(cells);
+    let {cells, format, clusterName, startDate, endDate} = request.query;
+
     cells = cells.split(',');
     format = format === undefined ? 'csv' : 'json';
+    startDate = startDate === undefined ? '2022-01-01' : startDate;
+    endDate = endDate === undefined ? '2025-01-01' : endDate;
+
     if (cells === undefined || cells.length === 0) {
         const error = new Error('No cell name provided.')
         return response.status(400).json({
@@ -489,6 +536,8 @@ const getGroupedCellsStats = (tech) => async (request, response) => {
                     LEFT JOIN celcom.stats.cell_mapping_gsm as t2
                            ON t1."Cell Name" = t2."CELLname"
                     WHERE t1."Cell Name" in ${sql(cells)}
+                        AND "Date" >=${startDate}
+                        AND "Date" <=${endDate}
                     GROUP BY 
                     "Date"
                 ORDER BY
@@ -656,6 +705,8 @@ const getGroupedCellsStats = (tech) => async (request, response) => {
                 LEFT JOIN celcom.stats.cell_mapping as t2
                     ON t1."EUtranCellFDD"=t2."CELLname"
                 WHERE "EUtranCellFDD" IN ${sql(cells)}
+                    AND "Date" >=${startDate}
+                    AND "Date" <=${endDate}
                 GROUP BY 
                     "Date"
                 ORDER BY
