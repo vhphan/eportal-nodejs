@@ -25,10 +25,11 @@ if (result.error) {
 
 
 class PostgresBackend {
-    constructor() {
+    constructor(dbName='dnb') {
         this.pool = null;
         this.client = null;
         this.config = {};
+        this.dbName = dbName;
     }
 
     setupPool() {
@@ -37,7 +38,7 @@ class PostgresBackend {
                 user: process.env.PGDB_USER,
                 password: process.env.PGDB_PASS,
                 host: 'localhost',
-                database: 'dnb',
+                database: this.dbName,
                 port: 6543,
             };
             this.pool = new Pool(this.config)
@@ -50,7 +51,7 @@ class PostgresBackend {
             user: process.env.PGDB_USER,
             password: process.env.PGDB_PASS,
             host: 'localhost',
-            database: 'dnb',
+            database: this.dbName,
             port: 6543,
         };
         return new Client(this.config);

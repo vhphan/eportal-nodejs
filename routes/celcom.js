@@ -3,8 +3,26 @@ const {auth} = require("../auth");
 const router = express.Router()
 const statsQueries = require('../db/celcom/statsQueries');
 const asyncHandler = require("../middleware/async");
+const PostgresBackend = require("../db/PostgresBackend");
+const {createListeners, createListener, sendEmail} = require("../db/utils");
 
 router.use(auth('celcom'))
+
+const cpg = new PostgresBackend('celcom');
+const client = cpg.getClient();
+createListener(client, 'new_data', async (data) => {
+    console.log(data.payload)
+    const updatedTable = data.payload;
+    if (['gsm_aggregates_week', 'lte_aggregates_week'].includes(updatedTable)) {
+        const tech = updatedTable.substring(0, 4);
+        const message = `Aggregation completed for ${tech}`;
+        sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', `Auto Messaging: Aggregation completed [${tech}]`, message);
+        return;
+    }
+    const message = `New data has been added to ${updatedTable} in database. Aggregation are being performed.`;
+    sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', 'Auto Messaging: New Data Processed', message);
+
+});
 
 function handler(req, res) {
     return res.send('Hello Celcom');
@@ -13,7 +31,6 @@ function handler(req, res) {
 function handler2(req, res) {
     return res.send('Hello Core2');
 }
-
 
 
 router.get('/', handler);

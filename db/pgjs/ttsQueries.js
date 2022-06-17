@@ -4,6 +4,7 @@ const sql = require('./PgJsBackend');
 const {logger} = require("../../middleware/logger");
 const {redisClient} = require("../../middleware/redisCache");
 const {response} = require("express");
+const {sendEmail} = require("../utils");
 const testQuery = async (request, response) => {
     response.status(200).json({result: 'success'});
 }
@@ -61,34 +62,7 @@ const createStrongPassword = function () {
     return retVal;
 }
 
-const sendEmail = function (email, subject, message) {
-    logger.info("Sending email to " + email);
-    logger.info(email);
-    logger.info(message);
-    const transporter = nodemailer.createTransport({
-        host: 'mail.eprojecttrackers.com',
-        port: 465,
-        auth: {
-            user: 'eri_portal@eprojecttrackers.com',
-            pass: process.env.MAIL_PASSWORD
-        }
-    });
-    const mailOptions = {
-        from: 'TTS<eri_portal@eprojecttrackers.com>',
-        to: email,
-        bcc: 'vee.huen.phan@ericsson.com',
-        subject: subject,
-        text: message
-    }
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            logger.error(error.message);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
-}
+
 
 const createUser = async (request, response) => {
 
