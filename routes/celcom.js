@@ -10,6 +10,7 @@ router.use(auth('celcom'))
 
 const cpg = new PostgresBackend('celcom');
 const client = cpg.getClient();
+
 createListener(client, 'new_data', async (data) => {
     console.log(data.payload)
     const updatedTable = data.payload;
@@ -21,7 +22,6 @@ createListener(client, 'new_data', async (data) => {
     }
     const message = `New data has been added to ${updatedTable} in database. Aggregation are being performed.`;
     sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', 'Auto Messaging: New Data Processed', message);
-
 });
 
 function handler(req, res) {

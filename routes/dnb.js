@@ -6,12 +6,14 @@ const pgDbGeo = require('../db/pgQueriesGeo');
 const pgJs = require('../db/pgjs/PgJsQueries');
 const compression = require('compression');
 const redis = require("redis");
-
+const apiCache = require('apicache')
+let cache = apiCache.middleware
 const asyncHandler = require("../middleware/async");
 const download = require("../tools/chartDl");
 const {auth} = require("../auth");
 const {createProxyMiddleware} = require("http-proxy-middleware");
 const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/redisCache");
+const needle = require("needle");
 
 
 router.use(auth('dnb'))
@@ -184,8 +186,32 @@ let postgrestProxy = createProxyMiddleware({
         '^/node/dnb/pgr': '', // remove base path
     },
 });
-
 router.all('/pgr/*', postgrestProxy);
+
+const gMapUrl = `https://maps.googleapis.com/maps/api/js`
+router.get('/googleMap', cache('2 minutes'), async (req, res, next) => {
+  try {
+    const params = new URLSearchParams({
+      key: process.env.GOOGLE_KEY,
+        libraries: 'places,visualization,geometries',
+        v: 'quarterly'
+    })
+
+    const apiRes = await needle('get', `${gMapUrl}?${params}`)
+    const data = apiRes.body
+
+    // Log the request to the public API
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`REQUEST: ${gMapUrl}?${params}`)
+    }
+
+    res.status(200).send(data)
+  } catch (error) {
+    next(error)
+  }
+})
+
+
 
 let geoServerProxy = createProxyMiddleware({
     changeOrigin: true,

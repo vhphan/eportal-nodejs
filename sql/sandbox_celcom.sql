@@ -54,5 +54,35 @@ FOR EACH STATEMENT
 EXECUTE PROCEDURE notify_new_data();
 
 
+create or replace function update_history() returns trigger
+	language plpgsql
+as $$
+BEGIN
+INSERT INTO stats.history (tbl_name, operation) VALUES (TG_TABLE_NAME, TG_OP);
+RETURN null;
+END;
+$$;
 
-SELECT event_object_table,trigger_name,event_manipulation,action_statement,action_timing FROM information_schema.triggers ORDER BY event_object_table,event_manipulation;
+DROP TRIGGER IF EXISTS new_data_all_cells on stats.all_cells;
+
+CREATE TRIGGER new_data_all_cells
+AFTER INSERT OR UPDATE OR DELETE
+ON stats.all_cells
+    FOR EACH STATEMENT
+EXECUTE PROCEDURE update_history();
+
+
+
+SELECT current_database(), event_object_schema,event_object_table,trigger_name,event_manipulation,action_statement,action_timing FROM information_schema.triggers ORDER BY event_object_table,event_manipulation;
+
+
+-- Generic trigger function, can be used for multiple triggers:
+CREATE OR REPLACE FUNCTION trg_notify_after()
+  RETURNS trigger
+  LANGUAGE plpgsql AS
+$$
+BEGIN
+   PERFORM pg_notify(TG_TABLE_NAME, TG_OP);
+   RETURN NULL;
+END;
+$$;

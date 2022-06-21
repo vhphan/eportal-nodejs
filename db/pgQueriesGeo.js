@@ -12,6 +12,7 @@ const getCells = async (request, response) => {
     let geomCol;
     switch (size) {
         case 'n':
+        case 'l':
             geomCol = 'cells.geom';
             break;
         case 'xs':

@@ -49,7 +49,7 @@ const getAggregatedStats = (tech) => async (request, response) => {
             });
             return;
         }
-        totalPages = Math.ceil(parseInt(totalRecords[0]['k'] / size))
+        totalPages = Math.ceil(totalRecords[0]['k'] / size)
     }
 
     const results = await sql`
@@ -429,10 +429,14 @@ const getCellStats = (tech) => async (request, response) => {
                 `
     }
     const {headers, values} = arrayToCsv(results);
+    const numOfCols = Object.keys(results[0]).length;
+    const numOfRows = results.length;
     return response.status(200).json({
         success: true,
         headers: headers.join('\t'),
         data: format === 'csv' ? values.join('\n') : results,
+        numOfRows,
+        numOfCols,
     });
 };
 
