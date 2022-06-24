@@ -6,6 +6,7 @@ const port = 3001;
 const general = require('./routes/general');
 const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
+const dnb2 = require('./routes/dnb2');
 const tts = require('./tts/tts');
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
@@ -29,6 +30,7 @@ app.use(express.static('static'));
 app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
+app.use('/node/dnb', dnb2);
 app.use('/node/tts', tts);
 app.use(errorHandler);
 

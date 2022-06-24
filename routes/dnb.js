@@ -113,7 +113,6 @@ router.get(
     asyncHandler(pgDbStats.dailyNetworkCellQueryLTE)
 )
 
-
 router.get(
     '/networkHourlyLTE',
     cache30m,
@@ -137,7 +136,6 @@ router.get(
     cache30m,
     asyncHandler(pgDbStats.hourlyNetworkCellQueryNR)
 )
-
 
 router.get(
     '/plmnHourlyLTE',
@@ -210,8 +208,6 @@ router.get('/googleMap', cache('2 minutes'), async (req, res, next) => {
     next(error)
   }
 })
-
-
 
 let geoServerProxy = createProxyMiddleware({
     changeOrigin: true,
