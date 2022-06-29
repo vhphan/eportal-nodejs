@@ -19,6 +19,7 @@ const {createListener} = require("./db/utils");
 const {postgrestProxy} = require("./proxies/proxify");
 const {createProxyMiddleware} = require("http-proxy-middleware");
 const result = require('dotenv').config({path: './.env'})
+const {createWatcherProcess} = require("./tools/utils");
 
 if (result.error) {
     throw result.error
@@ -105,3 +106,6 @@ process.on('unhandledRejection', (err, promise) => {
     logger.error(`Error: ${err.message}`);
     console.log(err);
 });
+
+
+// createWatcherProcess();

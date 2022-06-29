@@ -14,7 +14,7 @@ const client = cpg.getClient();
 createListener(client, 'new_data', async (data) => {
     console.log(data.payload)
     const updatedTable = data.payload;
-    if (['gsm_aggregates_week', 'lte_aggregates_week'].includes(updatedTable)) {
+    if (['gsm_aggregates_week_columns', 'lte_aggregates_week_columns'].includes(updatedTable)) {
         const tech = updatedTable.substring(0, 4);
         const message = `Aggregation completed for ${tech}`;
         sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', `Auto Messaging: Aggregation completed [${tech}]`, message);

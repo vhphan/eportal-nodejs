@@ -199,16 +199,16 @@ FROM stats."FexEutrancellFDDDailyPLMN"
            "E-RAB Setup Success Rate_non-GBR (%)",
            "Max of RRC Connected User"
         FROM stats."FexEutrancellFDD" t1
-        , stats."Flex_ERAB_SSR_NonGBR" t2
-        , stats."FlexMaxRRCUsersPivot" t3
-        WHERE t1."PLMN"<>'Overall'
-        and t1."EUtranCellFDD" = $1
-        and t2."EUtranCellFDD" = $1
-        and t3."EUtranCellFDD" = $1
-        and t1."DATE_ID" = t2."DATE_ID"
-        and t1."DATE_ID" = t3."DATE_ID"
-        and t1."PLMN" = t2."PLMN"
-        and t1."PLMN" = t3."PLMN"
+        LEFT JOIN stats."Flex_ERAB_SSR_NonGBR" t2
+            ON t1."EUtranCellFDD" = t2."EUtranCellFDD"
+            AND t1."DATE_ID" = t2."DATE_ID"
+            AND t1."PLMN" = t2."PLMN"
+        LEFT JOIN stats."FlexMaxRRCUsersPivot" t3
+            ON t1."EUtranCellFDD" = t3."EUtranCellFDD"
+            AND t1."DATE_ID" = t3."DATE_ID"
+            AND t1."PLMN" = t3."PLMN"
+        WHERE t1."PLMN" <> 'Overall'
+        AND t1."EUtranCellFDD"=$1
     `,
 
     dailyNetworkCellNR: `
@@ -247,13 +247,13 @@ FROM stats."FexEutrancellFDDDailyPLMN"
            "Packet Loss (DL)",
            "Packet Loss UL" as "Packet Loss (UL)"
         FROM dnb.stats."DataTable" t1
-        , dnb.stats."CPULoad" t2
-        , dnb.stats."PacketLoss" t3
-        WHERE t1."NRCellDU" = $1
-        AND t1."NR_NAME" = t2."ERBS"
-        AND t1."NR_NAME" = t3."NE_NAME"
-        AND t1."DATE_ID" = t2."DATE_ID"
-        AND t1."DATE_ID" = t3."DATE_ID"
+            LEFT JOIN dnb.stats."CPULoad" t2
+                ON t1."NR_NAME" = t2."ERBS"
+                AND t1."DATE_ID" = t2."DATE_ID"
+            LEFT JOIN dnb.stats."PacketLoss" t3
+                ON t1."NR_NAME" = t3."NE_NAME"
+                AND t1."DATE_ID" = t3."DATE_ID"
+            WHERE t1."NRCellDU" = $1
         ;
     `,
 
@@ -308,11 +308,11 @@ FROM stats."FexEutrancellFDDDailyPLMN"
                 GROUP BY "ERBS" ORDER BY "ERBS";`,
 
     cellListLTE: `
-    SELECT distinct "EUtranCellFDD" as "object" FROM dnb.stats."NRCELLFDD" WHERE "EUtranCellFDD" ilike $1 ORDER BY "EUtranCellFDD";
+        SELECT * FROM dnb.stats.cell_list_lte WHERE object ilike $1 ORDER BY object;
     `,
 
     cellListNR: `
-    SELECT distinct "NRCellDU" as "object" FROM dnb.stats."DataTable" WHERE "NRCellDU" ilike $1 ORDER BY "NRCellDU";
+        SELECT * FROM dnb.stats.cell_list_nr WHERE object ilike $1 ORDER BY object;
     `,
 
     dailySiteNR: `

@@ -20,7 +20,6 @@ const networkKpiList = {
         "UL Data Volume",
         "Max of RRC Connected User (ENDC)",
         "Max of Active User",
-        "Latency (only Radio interface)",
         "DL QPSK %",
         "DL 16QAM%",
         "DL 64QAM%",
@@ -82,13 +81,16 @@ const clusterDailyStatsNR = async (request, response) => {
     const {clusterId} = request.query;
     const columns = networkKpiList["NR"];
     const results = await sql`
-                    SELECT t1."DATE_ID", 
-                            t1."Cluster_ID",
-                            ${ sql(columns) }
+                    SELECT t1."DATE_ID"::timestamp without time zone as time, 
+                            t1."Cluster_ID" as object,
+                            ${ sql(columns) },
+                            "Latency"
+
                         FROM dnb.stats_group."DataTableClusterKPI" as t1
                         LEFT JOIN dnb.stats_group."CPULoadClusterKPI" as t2 on t1."Cluster_ID"=t2."Cluster_ID" AND t1."DATE_ID"=t2."DATE_ID"
                         LEFT JOIN dnb.stats_group."PacketLossClusterKPI" as t3 on t1."Cluster_ID"=t3."Cluster_ID" AND t1."DATE_ID"=t3."DATE_ID"
                         WHERE t1."Cluster_ID"=${clusterId}
+                        ORDER BY t1."DATE_ID"
                         `;
    response.status(200).json(results);
 }
@@ -97,12 +99,13 @@ const clusterDailyStatsLTE = async (request, response) => {
     const {clusterId} = request.query;
     const columns = networkKpiList["LTE"];
     const results = await sql`
-                    SELECT t1."DATE_ID",
-                    t1."Cluster_ID",
+                    SELECT t1."DATE_ID"::timestamp without time zone as time,
+                    t1."Cluster_ID" as object,
                     ${ sql(columns) }
                         FROM dnb.stats_group."NRCELLFDDClusterKPI" as t1
                         LEFT JOIN dnb.stats_group."PRBCQIRSSITAClusterKPI" as t2 on t1."Cluster_ID"=t2."Cluster_ID" AND t1."DATE_ID"=t2."DATE_ID"
                         WHERE t1."Cluster_ID"=${clusterId}
+                        ORDER BY t1."DATE_ID"
                         `;
    response.status(200).json(results);
 }

@@ -15,21 +15,22 @@ const arrayToCsv = (results, parseDate = true) => {
 
 const getAggregatedStats = (tech) => async (request, response) => {
 
-    let {page, size, format, startDate, endDate} = request.query;
+    let {page, size, format, startDate, endDate, columns} = request.query;
 
     page = page === undefined ? 1 : parseInt(page);
     size = size === undefined ? 1000 : parseInt(size);
     startDate = startDate === undefined ? '2022-04-01' : startDate;
     endDate = endDate === undefined ? '2022-12-31' : endDate;
     format = format === undefined ? 'csv' : 'json';
+    columns = columns !== undefined;
     let table;
     switch (tech) {
         case 'GSM':
-            table = 'celcom.stats.gsm_aggregates';
+            table = columns ? 'celcom.stats.gsm_aggregates_columns' : 'celcom.stats.gsm_aggregates';
             break;
         case 'LTE':
         default:
-            table = 'celcom.stats.lte_aggregates';
+            table = columns ? 'celcom.stats.lte_aggregates_columns' : 'celcom.stats.lte_aggregates';
             break;
     }
     let totalRecords = -1;
@@ -74,7 +75,7 @@ const getAggregatedStats = (tech) => async (request, response) => {
 };
 
 const getAggregatedStatsWeek = (tech) => async (request, response) => {
-    let {page, size, format, startWeek, startYear, endWeek, endYear} = request.query;
+    let {page, size, format, startWeek, startYear, endWeek, endYear, columns} = request.query;
     page = page === undefined ? 1 : parseInt(page);
     size = size === undefined ? 1000 : parseInt(size);
     format = format === undefined ? 'csv' : 'json';
@@ -82,14 +83,16 @@ const getAggregatedStatsWeek = (tech) => async (request, response) => {
     endYear = endYear === undefined ? 2022 : parseInt(endYear);
     startWeek = startWeek === undefined ? 1 : parseInt(startWeek);
     endWeek = endWeek === undefined ? 52 : parseInt(endWeek);
+    columns = columns !== undefined;
+
     let table;
     switch (tech) {
         case 'GSM':
-            table = 'celcom.stats.gsm_aggregates_week';
+            table = columns ? 'celcom.stats.gsm_aggregates_week_columns' : 'celcom.stats.gsm_aggregates_week';
             break;
         case 'LTE':
         default:
-            table = 'celcom.stats.lte_aggregates_week';
+            table = columns ? 'celcom.stats.lte_aggregates_week_columns' : 'celcom.stats.lte_aggregates_week';
             break;
     }
     let totalPages, totalRecords;

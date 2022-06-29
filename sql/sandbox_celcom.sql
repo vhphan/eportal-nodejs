@@ -46,9 +46,11 @@ CREATE Table stats.test_data AS
     SELECT * FROM stats.lte_oss_raw_cell order by random()
 LIMIT 10;
 
+
+SET SEARCH_PATH TO stats, public;
 CREATE TRIGGER new_data
 AFTER INSERT
-ON stats.gsm_aggregates_week
+ON stats.gsm_aggregates_week_columns
     REFERENCING NEW TABLE AS new_table
 FOR EACH STATEMENT
 EXECUTE PROCEDURE notify_new_data();

@@ -5,6 +5,7 @@ const {logger} = require("../../middleware/logger");
 const {redisClient} = require("../../middleware/redisCache");
 const {response} = require("express");
 const {sendEmail} = require("../utils");
+
 const testQuery = async (request, response) => {
     response.status(200).json({result: 'success'});
 }
@@ -63,7 +64,6 @@ const createStrongPassword = function () {
 }
 
 
-
 const createUser = async (request, response) => {
 
     const {email, firstName, lastName, userType, remarks} = request.body;
@@ -76,7 +76,8 @@ const createUser = async (request, response) => {
                                                             user_type, remarks)
                                  VALUES (${email}, crypt(${password}, gen_salt('bf')),
                                          ${firstName}, ${lastName},
-                                         ${userType}, ${remarks}) returning *;`;
+                                         ${userType}, ${remarks})
+                                 returning *;`;
 
     const user = userResult[0];
 
@@ -91,17 +92,20 @@ const createUser = async (request, response) => {
     let userTypeResult;
     if (userType === 'admin') {
         userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id)
-                                   VALUES (${user.id}) returning *`;
+                                   VALUES (${user.id})
+                                   returning *`;
     }
     if (userType === 'pm') {
         const {adminId, aspId} = request.body;
         userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id, admin_id, asp_id)
-                                   VALUES (${user.id}, ${adminId}, ${aspId}) returning *`;
+                                   VALUES (${user.id}, ${adminId}, ${aspId})
+                                   returning *`;
     }
     if (userType === 'dt') {
         const {pmId, aspId} = request.body;
         userTypeResult = await sql`INSERT INTO ${sql(userTypeTable)} (user_id, pm_id, asp_id)
-                                   VALUES (${user.id}, ${pmId}, ${aspId}) returning *`;
+                                   VALUES (${user.id}, ${pmId}, ${aspId})
+                                   returning *`;
     }
     if (!!userTypeResult[0].id) {
         sendEmail(email, 'Your TTS account has been created', `Your TTS account has been created. Your password is ${password}`);
@@ -161,6 +165,10 @@ function logoutUser(request, response) {
 }
 
 async function getUsers(request, response) {
+    let {userType} = request.query;
+    if (!userType) {
+        userType = '%';
+    }
     const results = await sql`
     SELECT users.id,
        first_name,
@@ -181,6 +189,7 @@ FROM dnb.tts.users
                    ON dnb.tts.users.id = dnb.tts.admins.user_id
          LEFT JOIN dnb.tts.pm ON dnb.tts.users.id = dnb.tts.pm.user_id
          LEFT JOIN dnb.tts.dt ON dnb.tts.users.id = dnb.tts.dt.user_id
+         WHERE user_type LIKE ${userType}
 ;`;
     response.status(200).json({success: true, data: results, message: 'Users retrieved'});
 }
@@ -231,7 +240,8 @@ async function updateUser(request, response) {
                                user_type  = ${userType},
                                remarks    = ${remarks},
                                active     = ${active === 'true'}
-                           WHERE id = ${id} returning *;`;
+                           WHERE id = ${id}
+                           returning *;`;
     response.status(200).json({success: true, message: 'User updated successfully!', data: user});
 }
 
@@ -265,7 +275,8 @@ async function createTask(request, response) {
                                    ${taskDescription},
                                    ${taskPlanStartDate},
                                    ${taskPlanEndDate},
-                                   ${requestorId}) returning *;`;
+                                   ${requestorId})
+                           returning *;`;
 
     response.status(200).json({success: true, message: 'Task created successfully!', data: task});
 }
@@ -281,28 +292,44 @@ async function deleteTask(request, response) {
 async function updateTask(request, response) {
     const requestorId = await preChecksUserRightsForTask(request, response);
     const {
-        taskName,
-        taskType,
-        taskDescription,
-        taskPlanStartDate,
-        taskPlanEndDate,
+        task_name,
+        task_type,
+        task_description,
+        task_plan_start_date,
+        task_plan_end_date,
+        assigned_to,
     } = request.body;
     const id = request.params.id;
     const task = await sql`UPDATE dnb.tts.tasks
-                           SET task_name            = ${taskName},
-                               task_type            = ${taskType},
-                               task_description     = ${taskDescription},
-                               task_plan_start_date = ${taskPlanStartDate},
-                               task_plan_end_date   = ${taskPlanEndDate},
+                           SET task_name            = ${task_name},
+                               task_type            = ${task_type},
+                               task_description     = ${task_description},
+                               task_plan_start_date = ${task_plan_start_date},
+                               task_plan_end_date   = ${task_plan_end_date},
+                               assigned_to          = ${assigned_to},
                                updated_by           = ${requestorId}
-                           WHERE id = ${id} returning *;`;
+                           WHERE id = ${id}
+                           returning *;`;
     response.status(200).json({success: true, message: 'Task updated successfully!', data: task});
 }
 
 async function getTasks(request, response) {
     const tasks = await sql`SELECT 
-    * 
-    FROM dnb.tts.tasks order by id desc;`;
+    t1.id,
+    task_name,
+    task_type,
+    task_description,
+    created_date,
+    task_plan_start_date,
+    task_plan_end_date,
+    created_by,
+    concat(u1.first_name, ' ', u1.last_name) as created_by_name, 
+    assigned_to,
+    concat(u2.first_name, ' ', u2.last_name) as assigned_to_name
+    FROM dnb.tts.tasks as t1
+    LEFT JOIN dnb.tts.users as u1 ON t1.created_by = u1.id
+    LEFT JOIN dnb.tts.users as u2 ON t1.assigned_to = u2.id
+    order by id desc;`;
     response.status(200).json({success: true, message: 'Tasks fetched successfully!', data: tasks});
 }
 

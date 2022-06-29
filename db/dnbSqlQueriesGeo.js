@@ -21,6 +21,16 @@ const sqlQueries = {
         AND "LONGITUDE" > 0
         ;
     `,
+    clusters: `SELECT json_build_object(
+                'type', 'Feature',
+                'geometry', ST_AsGeoJSON("geom")::json,
+                'properties', json_build_object(
+                    'district', "DISTRICT",
+                    'clusterId', "Cluster_ID",
+                    'state', "MCMC_State"
+                )
+                ) as f
+                FROM dnb.stats.commercial_polygons`
 
 
 }

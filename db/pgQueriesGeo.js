@@ -6,6 +6,7 @@ const {
     cells
 } = require('./dnbSqlQueriesGeo');
 const {logger} = require("../middleware/logger");
+const fs = require("fs");
 
 const getCells = async (request, response) => {
     const {system, size, region} = request.query;
@@ -57,9 +58,19 @@ const getCells = async (request, response) => {
         AND "LATITUDE" > 0
         AND "LONGITUDE" > 0 `;
     console.log(results.length);
-    response.status(200).json({type: 'FeatureCollection', features: results.map(d=>d['f'])});
+    response.status(200).json({type: 'FeatureCollection', features: results.map(d => d['f'])});
+}
+
+const getClusters = async (request, response) => {
+    fs.readFile('files/clusters.geojson', 'utf8', (err, data) => {
+        if (err) {
+            throw err;
+        }
+        response.send(JSON.parse(data));
+    });
 }
 
 module.exports = {
-    getCells
+    getCells,
+    getClusters
 };
