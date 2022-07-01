@@ -2,7 +2,9 @@ const express = require('express');
 const {auth} = require("../auth");
 const router = express.Router();
 const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/redisCache");
-const {clusterDailyStatsNR, testQuery, clusterDailyStatsLTE} = require("../db/pgjs/PgJSQueriesStats");
+const {clusterDailyStatsNR, testQuery, clusterDailyStatsLTE, customCellListStatsNR, customCellListStatsNR2,
+    customCellListStatsLTE, customCellListStatsLTE2
+} = require("../db/pgjs/PgJSQueriesStats");
 const asyncHandler = require("../middleware/async");
 const sql = require("../db/pgjs/PgJsBackend");
 const pgDbGeo = require("../db/pgQueriesGeo");
@@ -21,6 +23,11 @@ router.get('/clusterList', async(request, response)=>{
     ORDER BY "Cluster_ID";`
     response.status(200).json(results);
 });
+
+router.get('/statsForCustomCellsListNR', asyncHandler(customCellListStatsNR))
+router.get('/statsForCustomCellsListNR2', asyncHandler(customCellListStatsNR2))
+router.get('/statsForCustomCellsListLTE', asyncHandler(customCellListStatsLTE))
+router.get('/statsForCustomCellsListLTE2', asyncHandler(customCellListStatsLTE2))
 
 router.get(
     '/clustersPolygons',

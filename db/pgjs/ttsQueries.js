@@ -34,7 +34,6 @@ async function getUserById(id) {
     return result[0];
 }
 
-
 async function getUserByApi(apiKey) {
     if (!redisClient.isOpen) {
         await redisClient.connect();
@@ -52,7 +51,6 @@ async function getUserByApi(apiKey) {
     return result[0];
 }
 
-
 const createStrongPassword = function () {
     var length = 10,
         charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*_|;,.<>?",
@@ -62,7 +60,6 @@ const createStrongPassword = function () {
     }
     return retVal;
 }
-
 
 const createUser = async (request, response) => {
 
