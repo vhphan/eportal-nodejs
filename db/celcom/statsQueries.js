@@ -1,17 +1,8 @@
 const sql = require('./PgJsBackend');
 const {response} = require("express");
 const {lteAggColumns} = require("./constants");
+const {arrayToCsv} = require("../../routes/utils");
 
-const arrayToCsv = (results, parseDate = true) => {
-    const headers = Object.keys(results[0]);
-    if (parseDate) {
-        results.forEach(d => {
-            d['Date'] = d['Date'].toISOString().split('T')[0]
-        })
-    }
-    const values = results.map(d => Object.values(d).join('\t'));
-    return {headers, values};
-};
 
 const getAggregatedStats = (tech) => async (request, response) => {
 
@@ -430,6 +421,7 @@ const getCellStats = (tech) => async (request, response) => {
                     AND "Date" <=${endDate}
                 GROUP BY "Date", "EUtranCellFDD"
                 `
+        //</editor-fold>
     }
     const {headers, values} = arrayToCsv(results);
     const numOfCols = Object.keys(results[0]).length;
@@ -446,19 +438,28 @@ const getCellStats = (tech) => async (request, response) => {
 const getCellMapping = (tech) => async (request, response) => {
     let {format} = request.query;
     format = format === undefined ? 'csv' : 'json';
-    let table;
+    let results;
     switch (tech) {
         case 'GSM':
-            table = 'celcom.stats.cell_mapping_gsm';
+            results = await sql`
+                            SELECT * FROM celcom.stats.cell_mapping_gsm
+                            `;
             break;
         case 'LTE':
         default:
-            table = 'celcom.stats.cell_mapping';
+            results = await sql`
+                            SELECT * FROM celcom.stats.cell_mapping
+                            `;
+            break;
+        case 'ALL':
+            results = await sql`
+                            SELECT *, 'GSM' as tech FROM celcom.stats.cell_mapping_gsm
+                            UNION ALL
+                            SELECT *, 'LTE' as tech FROM celcom.stats.cell_mapping
+                            `;
             break;
     }
-    const results = await sql`
-    SELECT * FROM ${sql(table)}
-    `;
+
     const {headers, values} = arrayToCsv(results, false);
     return response.status(200).json({
         success: true,
@@ -731,10 +732,528 @@ const getGroupedCellsStats = (tech) => async (request, response) => {
 
 }
 
+
+async function excelTestFunc(request, response) {
+    console.log(request);
+    const format = request.body.format || 'csv';
+    const tech = request.body.tech || 'LTE';
+
+    const region = request.body['Region'];
+    const filterRegion = !!region;
+    const regionFilterFunc = () => filterRegion ? sql` "Region" IN ${sql(region)}` : sql` "Region" is not null`;
+
+    const state = request.body['State'];
+    const filterState = !!state;
+    const stateFilterFunc = () => filterState ? sql`and "State" IN ${sql(state)}` : sql`and "State" is not null`;
+
+    const cboClusterCode = request.body['cbo_cluster_code'];
+    const filterCboClusterCode = !!cboClusterCode;
+    const cboClusterFilterFunc = () => filterCboClusterCode ? sql`and cbo_cluster_code IN ${sql(cboClusterCode)}` : sql`and cbo_cluster_code is not null`;
+
+    const netClusterCode = request.body['Net_Cluster_Code'];
+    const filterNetClusterCode = !!netClusterCode;
+    const netClusterFilterFunc = () => filterNetClusterCode ? sql`and "Net_Cluster_Code" IN ${sql(netClusterCode)}` : sql`and "Net_Cluster_Code" is not null`;
+
+    const cellNames = request.body['CELLname'];
+    const filterCellNames = !!cellNames;
+    const cellNamesFilterFunc = () => filterCellNames ? sql`and "CELLname" IN ${sql(cellNames)}` : sql``;
+
+    const filterConditions = () => sql` ${regionFilterFunc()} ${stateFilterFunc()} ${cboClusterFilterFunc()} ${netClusterFilterFunc()} `;
+
+    const startTime = new Date()
+    const results = tech === 'LTE' ? await sql`
+                                    WITH COUNTERS AS (SELECT t1."Date",
+                                    -- <editor-fold desc="Columns">
+                                    SUM("L02_RRC CSSR (%) Num")                              AS "L02_RRC CSSR (%) Num",
+                                    SUM("L02_RRC CSSR (%) Denom")                            AS "L02_RRC CSSR (%) Denom",
+                                    SUM("L03_RRC CSSR Serv (%) Num")                         AS "L03_RRC CSSR Serv (%) Num",
+                                    SUM("L03_RRC CSSR Serv (%) Denom")                       AS "L03_RRC CSSR Serv (%) Denom",
+                                    SUM("L04_ERAB CSSR (%) Num")                             AS "L04_ERAB CSSR (%) Num",
+                                    SUM("L04_ERAB CSSR (%) Denom")                           AS "L04_ERAB CSSR (%) Denom",
+                                    SUM("L05_ERAB DR (%) Num")                               AS "L05_ERAB DR (%) Num",
+                                    SUM("L05_ERAB DR (%) Denom")                             AS "L05_ERAB DR (%) Denom",
+                                    SUM("L06_ERAB DR (%) Num")                               AS "L06_ERAB DR (%) Num",
+                                    SUM("L06_ERAB DR (%) Denom")                             AS "L06_ERAB DR (%) Denom",
+                                    SUM("L06_ERAB Drop due to Cell Down Time")               AS "L06_ERAB Drop due to Cell Down Time",
+                                    SUM("L06_ERAB Drop due to Cell Down Time (PNR)")         AS "L06_ERAB Drop due to Cell Down Time (PNR)",
+                                    SUM("L06_ERAB Drop due to contact with UE lost")         AS "L06_ERAB Drop due to contact with UE lost",
+                                    SUM("L06_ERAB Drop due to HO Exe failure")               AS "L06_ERAB Drop due to HO Exe failure",
+                                    SUM("L06_ERAB Drop due to HO Preparation")               AS "L06_ERAB Drop due to HO Preparation",
+                                    SUM("L06_ERAB Drop due to S1/X2 Down / Tn Res Unavail")  AS "L06_ERAB Drop due to S1/X2 Down / Tn Res Unavail",
+                                    SUM("L06_ERAB Drop due to UE Pre-emption")               AS "L06_ERAB Drop due to UE Pre-emption",
+                                    SUM("L07_Packet Loss Rate DL (%) Num")                   AS "L07_Packet Loss Rate DL (%) Num",
+                                    SUM("L07_Packet Loss Rate DL (%) Denom")                 AS "L07_Packet Loss Rate DL (%) Denom",
+                                    SUM("L08_Packet Loss Rate UL (%) Num")                   AS "L08_Packet Loss Rate UL (%) Num",
+                                    SUM("L08_Packet Loss Rate UL (%) Denom")                 AS "L08_Packet Loss Rate UL (%) Denom",
+                                    SUM("L09_IAF HO Prep SR (%) Num")                        AS "L09_IAF HO Prep SR (%) Num",
+                                    SUM("L09_IAF HO Prep SR (%) Denom")                      AS "L09_IAF HO Prep SR (%) Denom",
+                                    SUM("L09_IAF HO Exe SR (%) Num")                         AS "L09_IAF HO Exe SR (%) Num",
+                                    SUM("L09_IAF HO Exe SR (%) Denom")                       AS "L09_IAF HO Exe SR (%) Denom",
+                                    SUM("L10_IEF HO Prep SR (%) Num")                        AS "L10_IEF HO Prep SR (%) Num",
+                                    SUM("L10_IEF HO Prep SR (%) Denom")                      AS "L10_IEF HO Prep SR (%) Denom",
+                                    SUM("L10_IEF HO Exe SR (%) Num")                         AS "L10_IEF HO Exe SR (%) Num",
+                                    SUM("L10_IEF HO Exe SR (%) Denom")                       AS "L10_IEF HO Exe SR (%) Denom",
+                                    SUM("L11_Intra LTE HO Prep SR (%) Num")                  AS "L11_Intra LTE HO Prep SR (%) Num",
+                                    SUM("L11_Intra LTE HO Prep SR (%) Denom")                AS "L11_Intra LTE HO Prep SR (%) Denom",
+                                    SUM("L11_Intra LTE HO Exe SR (%) Num")                   AS "L11_Intra LTE HO Exe SR (%) Num",
+                                    SUM("L11_Intra LTE HO Exe SR (%) Denom")                 AS "L11_Intra LTE HO Exe SR (%) Denom",
+                                    SUM("L12_IRAT HOSR (%) Num")                             AS "L12_IRAT HOSR (%) Num",
+                                    SUM("L12_IRAT HOSR (%) Denom")                           AS "L12_IRAT HOSR (%) Denom",
+                                    SUM("L13_Cell NotAvail (%) Num")                         AS "L13_Cell NotAvail (%) Num",
+                                    SUM("L13_Cell NotAvail (%) Denom")                       AS "L13_Cell NotAvail (%) Denom",
+                                    SUM("L14_PSDL Trf (GB)")                                 AS "L14_PSDL Trf (GB)",
+                                    SUM("L14_PSUL Trf (GB)")                                 AS "L14_PSUL Trf (GB)",
+                                    SUM("L15_Integrity DL Latency (ms) Num")                 AS "L15_Integrity DL Latency (ms) Num",
+                                    SUM("L15_Integrity DL Latency (ms) Denom")               AS "L15_Integrity DL Latency (ms) Denom",
+                                    SUM("L16_Avg DL Thp Cell (Mbps) Num")                    AS "L16_Avg DL Thp Cell (Mbps) Num",
+                                    SUM("L16_Avg DL Thp Cell (Mbps) Denom")                  AS "L16_Avg DL Thp Cell (Mbps) Denom",
+                                    SUM("L17_Avg UL Thp Cell (Mbps) Num")                    AS "L17_Avg UL Thp Cell (Mbps) Num",
+                                    SUM("L17_Avg UL Thp Cell (Mbps) Denom")                  AS "L17_Avg UL Thp Cell (Mbps) Denom",
+                                    SUM("L18_Avg DL Thp User (Mbps) Num")                    AS "L18_Avg DL Thp User (Mbps) Num",
+                                    SUM("L18_Avg DL Thp User (Mbps) Denom")                  AS "L18_Avg DL Thp User (Mbps) Denom",
+                                    SUM("L19_Avg UL Thp User (Mbps) Num")                    AS "L19_Avg UL Thp User (Mbps) Num",
+                                    SUM("L19_Avg UL Thp User (Mbps) Denom")                  AS "L19_Avg UL Thp User (Mbps) Denom",
+                                    SUM("L23_Avg UL Interference PUSCH (dBm) Num")           AS "L23_Avg UL Interference PUSCH (dBm) Num",
+                                    SUM("L23_Avg UL Interference PUSCH (dBm) Denom")         AS "L23_Avg UL Interference PUSCH (dBm) Denom",
+                                    SUM("L23_Avg UL Interference PUCCH (dBm) Num")           AS "L23_Avg UL Interference PUCCH (dBm) Num",
+                                    SUM("L23_Avg UL Interference PUCCH (dBm) Denom")         AS "L23_Avg UL Interference PUCCH (dBm) Denom",
+                                    SUM("L24_PRB Util DL (%) Num")                           AS "L24_PRB Util DL (%) Num",
+                                    SUM("L24_PRB Util DL (%) Denom")                         AS "L24_PRB Util DL (%) Denom",
+                                    SUM("L25_PRB Util UL (%) Num")                           AS "L25_PRB Util UL (%) Num",
+                                    SUM("L25_PRB Util UL (%) Denom")                         AS "L25_PRB Util UL (%) Denom",
+                                    SUM("L26_CA User (#) Num")                               AS "L26_CA User (#) Num",
+                                    SUM("L26_CA User (#) Denom")                             AS "L26_CA User (#) Denom",
+                                    SUM("L27_CA Capable User (#) Num")                       AS "L27_CA Capable User (#) Num",
+                                    SUM("L27_CA Capable User (#) Denom")                     AS "L27_CA Capable User (#) Denom",
+                                    SUM("L29_CA Thpt (Mbps) Num")                            AS "L29_CA Thpt (Mbps) Num",
+                                    SUM("L29_CA Thpt (Mbps) Denom")                          AS "L29_CA Thpt (Mbps) Denom",
+                                    SUM("L30_DL BLER (%) Num")                               AS "L30_DL BLER (%) Num",
+                                    SUM("L30_DL BLER (%) Denom")                             AS "L30_DL BLER (%) Denom",
+                                    SUM("L31_UL BLER (%) Num")                               AS "L31_UL BLER (%) Num",
+                                    SUM("L31_UL BLER (%) Denom")                             AS "L31_UL BLER (%) Denom",
+                                    SUM("L32_Modulation DL QPSK (#)")                        AS "L32_Modulation DL QPSK (#)",
+                                    SUM("L32_Modulation DL 16QAM (#)")                       AS "L32_Modulation DL 16QAM (#)",
+                                    SUM("L32_Modulation DL 64QAM (#)")                       AS "L32_Modulation DL 64QAM (#)",
+                                    SUM("L32_Modulation DL 256QAM (#)")                      AS "L32_Modulation DL 256QAM (#)",
+                                    SUM("L33_Average CQI (#) Num")                           AS "L33_Average CQI (#) Num",
+                                    SUM("L33_Average CQI (#) Denom")                         AS "L33_Average CQI (#) Denom",
+                                    SUM("L34_Average RSRP (dBm) Num")                        AS "L34_Average RSRP (dBm) Num",
+                                    SUM("L34_Average RSRP (dBm) Denom")                      AS "L34_Average RSRP (dBm) Denom",
+                                    SUM("L35_RSRP <-110 dBm (%) Num")                        AS "L35_RSRP <-110 dBm (%) Num",
+                                    SUM("L35_RSRP <-110 dBm (%) Denom")                      AS "L35_RSRP <-110 dBm (%) Denom",
+                                    SUM("L36_Average SINR PUSCH (dB) Num")                   AS "L36_Average SINR PUSCH (dB) Num",
+                                    SUM("L36_Average SINR PUSCH (dB) Denom")                 AS "L36_Average SINR PUSCH (dB) Denom",
+                                    SUM("L36_Average SINR PUCCH (dB) Num")                   AS "L36_Average SINR PUCCH (dB) Num",
+                                    SUM("L36_Average SINR PUCCH (dB) Denom")                 AS "L36_Average SINR PUCCH (dB) Denom",
+                                    SUM("L37_Spectral Efficiency (Bit/s/Hz) Num")            AS "L37_Spectral Efficiency (Bit/s/Hz) Num",
+                                    SUM("L37_Spectral Efficiency (Bit/s/Hz) Denom")          AS "L37_Spectral Efficiency (Bit/s/Hz) Denom",
+                                    SUM("S01_Accessibility SIP QCI5 (%) Num")                AS "S01_Accessibility SIP QCI5 (%) Num",
+                                    SUM("S01_Accessibility SIP QCI5 (%) Denom")              AS "S01_Accessibility SIP QCI5 (%) Denom",
+                                    SUM("S01_Retainability SIP QCI5 (%) Num")                AS "S01_Retainability SIP QCI5 (%) Num",
+                                    SUM("S01_Retainability SIP QCI5 (%) Denom")              AS "S01_Retainability SIP QCI5 (%) Denom",
+                                    SUM("S01_RRC Re-estab SR QCI5 (%) Num")                  AS "S01_RRC Re-estab SR QCI5 (%) Num",
+                                    SUM("S01_RRC Re-estab SR QCI5 (%) Denom")                AS "S01_RRC Re-estab SR QCI5 (%) Denom",
+                                    SUM("V01_E-RAB Establisment SR QCI1 (%) Num")            AS "V01_E-RAB Establisment SR QCI1 (%) Num",
+                                    SUM("V01_E-RAB Establisment SR QCI1 (%) Denom")          AS "V01_E-RAB Establisment SR QCI1 (%) Denom",
+                                    SUM("V02_E-RAB Retainability QCI1 (%) Num")              AS "V02_E-RAB Retainability QCI1 (%) Num",
+                                    SUM("V02_E-RAB Retainability QCI1 (%) Denom")            AS "V02_E-RAB Retainability QCI1 (%) Denom",
+                                    SUM("V02_VoLTE Drop due to Cell Down Time")              AS "V02_VoLTE Drop due to Cell Down Time",
+                                    SUM("V02_VoLTE Drop due to contact with UE lost")        AS "V02_VoLTE Drop due to contact with UE lost",
+                                    SUM("V02_VoLTE Drop due to HO Exe Failure")              AS "V02_VoLTE Drop due to HO Exe Failure",
+                                    SUM("V02_VoLTE Drop due to HO Preparation")              AS "V02_VoLTE Drop due to HO Preparation",
+                                    SUM("V02_VoLTE Drop due to part. ERAB path switch fail") AS "V02_VoLTE Drop due to part. ERAB path switch fail",
+                                    SUM("V02_VoLTE Drop due to S1/X2 Down / Tn Res Unavail") AS "V02_VoLTE Drop due to S1/X2 Down / Tn Res Unavail",
+                                    SUM("V03_RRC Re-estab SR QCI1 (%) Num")                  AS "V03_RRC Re-estab SR QCI1 (%) Num",
+                                    SUM("V03_RRC Re-estab SR QCI1 (%) Denom")                AS "V03_RRC Re-estab SR QCI1 (%) Denom",
+                                    SUM("V04_VoLTE Traffic (Erlang)")                        AS "V04_VoLTE Traffic (Erlang)",
+                                    SUM("V05_VoLTE User (#)")                                AS "V05_VoLTE User (#)",
+                                    SUM("V06_VoLTE Packet Loss DL (%) Num")                  AS "V06_VoLTE Packet Loss DL (%) Num",
+                                    SUM("V06_VoLTE Packet Loss DL (%) Denom")                AS "V06_VoLTE Packet Loss DL (%) Denom",
+                                    SUM("V07_VoLTE Packet Loss UL (%) Num")                  AS "V07_VoLTE Packet Loss UL (%) Num",
+                                    SUM("V07_VoLTE Packet Loss UL (%) Denom")                AS "V07_VoLTE Packet Loss UL (%) Denom",
+                                    SUM("V08_VoLTE IAF HO SR (%) Num")                       AS "V08_VoLTE IAF HO SR (%) Num",
+                                    SUM("V08_VoLTE IAF HO SR (%) Denom")                     AS "V08_VoLTE IAF HO SR (%) Denom",
+                                    SUM("V09_VoLTE IEF HO SR (%) Num")                       AS "V09_VoLTE IEF HO SR (%) Num",
+                                    SUM("V09_VoLTE IEF HO SR (%) Denom")                     AS "V09_VoLTE IEF HO SR (%) Denom",
+                                    SUM("V10_RRC RwR CSFB L2G (#)")                          AS "V10_RRC RwR CSFB L2G (#)",
+                                    SUM("V10_RRC RwR CSFB L2U (#)")                          AS "V10_RRC RwR CSFB L2U (#)",
+                                    SUM("V10_CSFB Indicators Received (#)")                  AS "V10_CSFB Indicators Received (#)",
+                                    SUM("V10_RRC RwR SC L2G (#)")                            AS "V10_RRC RwR SC L2G (#)",
+                                    SUM("V10_RRC RwR SC L2U (#)")                            AS "V10_RRC RwR SC L2U (#)",
+                                    SUM("V11_VoLTE Integrity DL Latency (ms) Num")           AS "V11_VoLTE Integrity DL Latency (ms) Num",
+                                    SUM("V11_VoLTE Integrity DL Latency (ms) Denom")         AS "V11_VoLTE Integrity DL Latency (ms) Denom",
+                                    SUM("V12_VoLTE Integrity Cell (%) Num")                  AS "V12_VoLTE Integrity Cell (%) Num",
+                                    SUM("V12_VoLTE Integrity Cell (%) Denom")                AS "V12_VoLTE Integrity Cell (%) Denom",
+                                    SUM("V13_VoLTE Integrity UE (%) Num")                    AS "V13_VoLTE Integrity UE (%) Num",
+                                    SUM("V13_VoLTE Integrity UE (%) Denom")                  AS "V13_VoLTE Integrity UE (%) Denom",
+                                    SUM("V14_DL Silent exp per VoLTE user (ms) Num")         AS "V14_DL Silent exp per VoLTE user (ms) Num",
+                                    SUM("V14_DL Silent exp per VoLTE user (ms) Denom")       AS "V14_DL Silent exp per VoLTE user (ms) Denom",
+                                    SUM("V15_UL Silent exp per VoLTE user (ms) Num")         AS "V15_UL Silent exp per VoLTE user (ms) Num",
+                                    SUM("V15_UL Silent exp per VoLTE user (ms) Denom")       AS "V15_UL Silent exp per VoLTE user (ms) Denom",
+                                    SUM("V16_SRVCC HO to GERAN Prep SR (%) Num")             AS "V16_SRVCC HO to GERAN Prep SR (%) Num",
+                                    SUM("V16_SRVCC HO to GERAN Prep SR (%) Denom")           AS "V16_SRVCC HO to GERAN Prep SR (%) Denom",
+                                    SUM("V16_SRVCC HO to GERAN Exe SR (%) Num")              AS "V16_SRVCC HO to GERAN Exe SR (%) Num",
+                                    SUM("V16_SRVCC HO to GERAN Exe SR (%) Denom")            AS "V16_SRVCC HO to GERAN Exe SR (%) Denom",
+                                    SUM("V17_SRVCC HO to GERAN Prep SR (%) Num PLMN0")       AS "V17_SRVCC HO to GERAN Prep SR (%) Num PLMN0",
+                                    SUM("V17_SRVCC HO to GERAN Prep SR (%) Denom PLMN0")     AS "V17_SRVCC HO to GERAN Prep SR (%) Denom PLMN0",
+                                    SUM("V17_SRVCC HO to GERAN Exe SR (%) Num PLMN0")        AS "V17_SRVCC HO to GERAN Exe SR (%) Num PLMN0",
+                                    SUM("V17_SRVCC HO to GERAN Exe SR (%) Denom PLMN0")      AS "V17_SRVCC HO to GERAN Exe SR (%) Denom PLMN0",
+                                    SUM("V18_SRVCC HO to UTRAN Prep SR (%) Num")             AS "V18_SRVCC HO to UTRAN Prep SR (%) Num",
+                                    SUM("V18_SRVCC HO to UTRAN Prep SR (%) Denom")           AS "V18_SRVCC HO to UTRAN Prep SR (%) Denom",
+                                    SUM("V18_SRVCC HO to UTRAN Exe SR (%) Num")              AS "V18_SRVCC HO to UTRAN Exe SR (%) Num",
+                                    SUM("V18_SRVCC HO to UTRAN Exe SR (%) Denom")            AS "V18_SRVCC HO to UTRAN Exe SR (%) Denom",
+                                    SUM("L20_Active UE User (#)")                            AS "L20_Active UE User (#)",
+                                    SUM("L21_Avg RRC User (#)")                              AS "L21_Avg RRC User (#)",
+                                    SUM("L21_Max RRC User (#)")                              AS "L21_Max RRC User (#)",
+                                    SUM("L22_Avg ERAB User (#)")                             AS "L22_Avg ERAB User (#)",
+                                    SUM("L22_Max ERAB User (#)")                             AS "L22_Max ERAB User (#)",
+                                    SUM("L26_CA User (#)")                                   AS "L26_CA User (#)",
+                                    SUM("L27_CA Capable User (#)")                           AS "L27_CA Capable User (#)",
+                                    SUM("V10_CSFB Initiation Success Rate (%) Num")          AS "V10_CSFB Initiation Success Rate (%) Num",
+                                    SUM("V10_CSFB Indicators Received (#) Denom")            AS "V10_CSFB Indicators Received (#) Denom",
+                                    SUM("V19_L2G SRVCC (%) Num")                             AS "V19_L2G SRVCC (%) Num",
+                                    SUM("V19_L2G SRVCC (%) Denom")                           AS "V19_L2G SRVCC (%) Denom",
+                                    SUM("V20_CSFB 2G (%) Num")                               AS "V20_CSFB 2G (%) Num",
+                                    SUM("V20_CSFB 2G (%) Denom")                             AS "V20_CSFB 2G (%) Denom",
+                                    SUM("V21_VoLTE UL Audio Gap < 6s (%) Num")               AS "V21_VoLTE UL Audio Gap < 6s (%) Num",
+                                    SUM("V21_VoLTE UL Audio Gap < 6s (%) Denom")             AS "V21_VoLTE UL Audio Gap < 6s (%) Denom"
+                                    -- </editor-fold>
+                                      FROM celcom.stats.lte_aggregates_columns as t1
+                                        WHERE 
+                                        ${filterConditions()}
+                              GROUP BY "Date") 
+            SELECT "Date":: varchar(10)                                             as "Date",
+                   -- <editor-fold desc="LTE KPIS">
+                   ("L02_RRC CSSR (%) Num") / nullif(("L02_RRC CSSR (%) Denom"), 0) as "L02_RRC CSSR (%)",
+                   ("L03_RRC CSSR Serv (%) Num") /
+                   nullif(("L03_RRC CSSR Serv (%) Denom"), 0)                       as "L03_RRC CSSR Serv (%)",
+                   ("L04_ERAB CSSR (%) Num") /
+                   nullif(("L04_ERAB CSSR (%) Denom"), 0)                           as "L04_ERAB CSSR (%)",
+                   ("L05_ERAB DR (%) Num") /
+                   nullif(("L05_ERAB DR (%) Denom"), 0)                             as "L05_ERAB DR (%)",
+                   ("L06_ERAB DR (%) Num") /
+                   nullif(("L06_ERAB DR (%) Denom"), 0)                             as "L06_ERAB DR (%)",
+                   ("L07_Packet Loss Rate DL (%) Num") /
+                   nullif(("L07_Packet Loss Rate DL (%) Denom"), 0)                 as "L07_Packet Loss Rate DL (%)",
+                   ("L08_Packet Loss Rate UL (%) Num") /
+                   nullif(("L08_Packet Loss Rate UL (%) Denom"), 0)                 as "L08_Packet Loss Rate UL (%)",
+                   ("L09_IAF HO Prep SR (%) Num") /
+                   nullif(("L09_IAF HO Prep SR (%) Denom"), 0)                      as "L09_IAF HO Prep SR (%)",
+                   ("L09_IAF HO Exe SR (%) Num") /
+                   nullif(("L09_IAF HO Exe SR (%) Denom"), 0)                       as "L09_IAF HO Exe SR (%)",
+                   ("L10_IEF HO Prep SR (%) Num") /
+                   nullif(("L10_IEF HO Prep SR (%) Denom"), 0)                      as "L10_IEF HO Prep SR (%)",
+                   ("L10_IEF HO Exe SR (%) Num") /
+                   nullif(("L10_IEF HO Exe SR (%) Denom"), 0)                       as "L10_IEF HO Exe SR (%)",
+                   ("L11_Intra LTE HO Prep SR (%) Num") /
+                   nullif(("L11_Intra LTE HO Prep SR (%) Denom"), 0)                as "L11_Intra LTE HO Prep SR (%)",
+                   ("L11_Intra LTE HO Exe SR (%) Num") /
+                   nullif(("L11_Intra LTE HO Exe SR (%) Denom"), 0)                 as "L11_Intra LTE HO Exe SR (%)",
+                   ("L12_IRAT HOSR (%) Num") /
+                   nullif(("L12_IRAT HOSR (%) Denom"), 0)                           as "L12_IRAT HOSR (%)",
+                   ("L13_Cell NotAvail (%) Num") /
+                   nullif(("L13_Cell NotAvail (%) Denom"), 0)                       as "L13_Cell NotAvail (%)",
+                   ("L15_Integrity DL Latency (ms) Num") /
+                   nullif(("L15_Integrity DL Latency (ms) Denom"), 0)               as "L15_Integrity DL Latency (ms)",
+                   ("L16_Avg DL Thp Cell (Mbps) Num") /
+                   nullif(("L16_Avg DL Thp Cell (Mbps) Denom"), 0)                  as "L16_Avg DL Thp Cell (Mbps)",
+                   ("L17_Avg UL Thp Cell (Mbps) Num") /
+                   nullif(("L17_Avg UL Thp Cell (Mbps) Denom"), 0)                  as "L17_Avg UL Thp Cell (Mbps)",
+                   ("L18_Avg DL Thp User (Mbps) Num") /
+                   nullif(("L18_Avg DL Thp User (Mbps) Denom"), 0)                  as "L18_Avg DL Thp User (Mbps)",
+                   ("L19_Avg UL Thp User (Mbps) Num") /
+                   nullif(("L19_Avg UL Thp User (Mbps) Denom"), 0)                  as "L19_Avg UL Thp User (Mbps)",
+            
+                   ("L20_Active UE User (#)")                                       as "L20_Active UE User (#)",
+                   ("L21_Avg RRC User (#)")                                         as "L21_Avg RRC User (#)",
+                   ("L21_Max RRC User (#)")                                         as "L21_Max RRC User (#)",
+                   ("L22_Avg ERAB User (#)")                                        as "L22_Avg ERAB User (#)",
+                   ("L22_Max ERAB User (#)")                                        as "L22_Max ERAB User (#)",
+            
+                   ("L23_Avg UL Interference PUSCH (dBm) Num") /
+                   nullif(("L23_Avg UL Interference PUSCH (dBm) Denom"), 0)         as "L23_Avg UL Interference PUSCH (dBm)",
+                   ("L23_Avg UL Interference PUCCH (dBm) Num") /
+                   nullif(("L23_Avg UL Interference PUCCH (dBm) Denom"), 0)         as "L23_Avg UL Interference PUCCH (dBm)",
+                   ("L24_PRB Util DL (%) Num") /
+                   nullif(("L24_PRB Util DL (%) Denom"), 0)                         as "L24_PRB Util DL (%)",
+                   ("L25_PRB Util UL (%) Num") /
+                   nullif(("L25_PRB Util UL (%) Denom"), 0)                         as "L25_PRB Util UL (%)",
+            
+            
+                   ("L26_CA User (#)")                                              as "L26_CA User (#)",
+                   ("L27_CA Capable User (#)")                                      as "L27_CA Capable User (#)",
+            
+            
+                   ("L29_CA Thpt (Mbps) Num") /
+                   nullif(("L29_CA Thpt (Mbps) Denom"), 0)                          as "L29_CA Thpt (Mbps)",
+                   ("L30_DL BLER (%) Num") /
+                   nullif(("L30_DL BLER (%) Denom"), 0)                             as "L30_DL BLER (%)",
+                   ("L31_UL BLER (%) Num") /
+                   nullif(("L31_UL BLER (%) Denom"), 0)                             as "L31_UL BLER (%)",
+                   ("L33_Average CQI (#) Num") /
+                   nullif(("L33_Average CQI (#) Denom"), 0)                         as "L33_Average CQI (#)",
+                   ("L34_Average RSRP (dBm) Num") /
+                   nullif(("L34_Average RSRP (dBm) Denom"), 0)                      as "L34_Average RSRP (dBm)",
+                   ("L35_RSRP <-110 dBm (%) Num") /
+                   nullif(("L35_RSRP <-110 dBm (%) Denom"), 0)                      as "L35_RSRP <-110 dBm (%)",
+                   ("L36_Average SINR PUSCH (dB) Num") /
+                   nullif(("L36_Average SINR PUSCH (dB) Denom"), 0)                 as "L36_Average SINR PUSCH (dB)",
+                   ("L36_Average SINR PUCCH (dB) Num") /
+                   nullif(("L36_Average SINR PUCCH (dB) Denom"), 0)                 as "L36_Average SINR PUCCH (dB)",
+                   ("L37_Spectral Efficiency (Bit/s/Hz) Num") /
+                   nullif(("L37_Spectral Efficiency (Bit/s/Hz) Denom"), 0)          as "L37_Spectral Efficiency (Bit/s/Hz)",
+                   ("S01_Accessibility SIP QCI5 (%) Num") /
+                   nullif(("S01_Accessibility SIP QCI5 (%) Denom"), 0)              as "S01_Accessibility SIP QCI5 (%)",
+                   ("S01_Retainability SIP QCI5 (%) Num") /
+                   nullif(("S01_Retainability SIP QCI5 (%) Denom"), 0)              as "S01_Retainability SIP QCI5 (%)",
+                   ("S01_RRC Re-estab SR QCI5 (%) Num") /
+                   nullif(("S01_RRC Re-estab SR QCI5 (%) Denom"), 0)                as "S01_RRC Re-estab SR QCI5 (%)",
+                   ("V01_E-RAB Establisment SR QCI1 (%) Num") /
+                   nullif(("V01_E-RAB Establisment SR QCI1 (%) Denom"), 0)          as "V01_E-RAB Establisment SR QCI1 (%)",
+                   ("V02_E-RAB Retainability QCI1 (%) Num") /
+                   nullif(("V02_E-RAB Retainability QCI1 (%) Denom"), 0)            as "V02_E-RAB Retainability QCI1 (%)",
+                   ("V03_RRC Re-estab SR QCI1 (%) Num") /
+                   nullif(("V03_RRC Re-estab SR QCI1 (%) Denom"), 0)                as "V03_RRC Re-estab SR QCI1 (%)",
+                   ("V06_VoLTE Packet Loss DL (%) Num") /
+                   nullif(("V06_VoLTE Packet Loss DL (%) Denom"), 0)                as "V06_VoLTE Packet Loss DL (%)",
+                   ("V07_VoLTE Packet Loss UL (%) Num") /
+                   nullif(("V07_VoLTE Packet Loss UL (%) Denom"), 0)                as "V07_VoLTE Packet Loss UL (%)",
+                   ("V08_VoLTE IAF HO SR (%) Num") /
+                   nullif(("V08_VoLTE IAF HO SR (%) Denom"), 0)                     as "V08_VoLTE IAF HO SR (%)",
+                   ("V09_VoLTE IEF HO SR (%) Num") /
+                   nullif(("V09_VoLTE IEF HO SR (%) Denom"), 0)                     as "V09_VoLTE IEF HO SR (%)",
+                   ("V11_VoLTE Integrity DL Latency (ms) Num") /
+                   nullif(("V11_VoLTE Integrity DL Latency (ms) Denom"), 0)         as "V11_VoLTE Integrity DL Latency (ms)",
+                   ("V12_VoLTE Integrity Cell (%) Num") /
+                   nullif(("V12_VoLTE Integrity Cell (%) Denom"), 0)                as "V12_VoLTE Integrity Cell (%)",
+                   ("V13_VoLTE Integrity UE (%) Num") /
+                   nullif(("V13_VoLTE Integrity UE (%) Denom"), 0)                  as "V13_VoLTE Integrity UE (%)",
+                   ("V14_DL Silent exp per VoLTE user (ms) Num") /
+                   nullif(("V14_DL Silent exp per VoLTE user (ms) Denom"), 0)       as "V14_DL Silent exp per VoLTE user (ms)",
+                   ("V15_UL Silent exp per VoLTE user (ms) Num") /
+                   nullif(("V15_UL Silent exp per VoLTE user (ms) Denom"), 0)       as "V15_UL Silent exp per VoLTE user (ms)",
+                   ("V16_SRVCC HO to GERAN Prep SR (%) Num") /
+                   nullif(("V16_SRVCC HO to GERAN Prep SR (%) Denom"), 0)           as "V16_SRVCC HO to GERAN Prep SR (%)",
+                   ("V16_SRVCC HO to GERAN Exe SR (%) Num") /
+                   nullif(("V16_SRVCC HO to GERAN Exe SR (%) Denom"), 0)            as "V16_SRVCC HO to GERAN Exe SR (%)",
+                   ("V17_SRVCC HO to GERAN Prep SR (%) Num PLMN0") /
+                   nullif(("V17_SRVCC HO to GERAN Prep SR (%) Denom PLMN0"), 0)     as "V17_SRVCC HO to GERAN Prep SR (%) PLMN0",
+                   ("V17_SRVCC HO to GERAN Exe SR (%) Num PLMN0") /
+                   nullif(("V17_SRVCC HO to GERAN Exe SR (%) Denom PLMN0"), 0)      as "V17_SRVCC HO to GERAN Exe SR (%) PLMN0",
+                   ("V18_SRVCC HO to UTRAN Prep SR (%) Num") /
+                   nullif(("V18_SRVCC HO to UTRAN Prep SR (%) Denom"), 0)           as "V18_SRVCC HO to UTRAN Prep SR (%)",
+                   ("V18_SRVCC HO to UTRAN Exe SR (%) Num") /
+                   nullif(("V18_SRVCC HO to UTRAN Exe SR (%) Denom"), 0)            as "V18_SRVCC HO to UTRAN Exe SR (%)",
+                   ("L06_ERAB Drop due to Cell Down Time")                          AS "L06_ERAB Drop due to Cell Down Time",
+                   ("L06_ERAB Drop due to Cell Down Time (PNR)")                    AS "L06_ERAB Drop due to Cell Down Time (PNR)",
+                   ("L06_ERAB Drop due to contact with UE lost")                    AS "L06_ERAB Drop due to contact with UE lost",
+                   ("L06_ERAB Drop due to HO Exe failure")                          AS "L06_ERAB Drop due to HO Exe failure",
+                   ("L06_ERAB Drop due to HO Preparation")                          AS "L06_ERAB Drop due to HO Preparation",
+                   ("L06_ERAB Drop due to S1/X2 Down / Tn Res Unavail")             AS "L06_ERAB Drop due to S1/X2 Down / Tn Res Unavail",
+                   ("L06_ERAB Drop due to UE Pre-emption")                          AS "L06_ERAB Drop due to UE Pre-emption",
+                   ("L14_PSDL Trf (GB)")                                            AS "L14_PSDL Trf (GB)",
+                   ("L14_PSUL Trf (GB)")                                            AS "L14_PSUL Trf (GB)",
+                   ("L32_Modulation DL QPSK (#)")                                   AS "L32_Modulation DL QPSK (#)",
+                   ("L32_Modulation DL 16QAM (#)")                                  AS "L32_Modulation DL 16QAM (#)",
+                   ("L32_Modulation DL 64QAM (#)")                                  AS "L32_Modulation DL 64QAM (#)",
+                   ("L32_Modulation DL 256QAM (#)")                                 AS "L32_Modulation DL 256QAM (#)",
+                   ("V02_VoLTE Drop due to Cell Down Time")                         AS "V02_VoLTE Drop due to Cell Down Time",
+                   ("V02_VoLTE Drop due to contact with UE lost")                   AS "V02_VoLTE Drop due to contact with UE lost",
+                   ("V02_VoLTE Drop due to HO Exe Failure")                         AS "V02_VoLTE Drop due to HO Exe Failure",
+                   ("V02_VoLTE Drop due to HO Preparation")                         AS "V02_VoLTE Drop due to HO Preparation",
+                   ("V02_VoLTE Drop due to part. ERAB path switch fail")            AS "V02_VoLTE Drop due to part. ERAB path switch fail",
+                   ("V02_VoLTE Drop due to S1/X2 Down / Tn Res Unavail")            AS "V02_VoLTE Drop due to S1/X2 Down / Tn Res Unavail",
+                   ("V04_VoLTE Traffic (Erlang)")                                   AS "V04_VoLTE Traffic (Erlang)",
+                   ("V05_VoLTE User (#)")                                           AS "V05_VoLTE User (#)",
+                   ("V10_RRC RwR CSFB L2G (#)")                                     AS "V10_RRC RwR CSFB L2G (#)",
+                   ("V10_RRC RwR CSFB L2U (#)")                                     AS "V10_RRC RwR CSFB L2U (#)",
+                   ("V10_CSFB Indicators Received (#)")                             AS "V10_CSFB Indicators Received (#)",
+                   ("V10_RRC RwR SC L2G (#)")                                       AS "V10_RRC RwR SC L2G (#)",
+                   ("V10_RRC RwR SC L2U (#)")                                       AS "V10_RRC RwR SC L2U (#)",
+                   ("V19_L2G SRVCC (%) Num") /
+                   nullif(("V19_L2G SRVCC (%) Denom"), 0)                           as "V19_L2G SRVCC (%)",
+                   ("V20_CSFB 2G (%) Num") /
+                   nullif(("V20_CSFB 2G (%) Denom"), 0)                             as "V20_CSFB 2G (%)",
+                   ("V21_VoLTE UL Audio Gap < 6s (%) Num") /
+                   nullif(("V21_VoLTE UL Audio Gap < 6s (%) Denom"), 0)             as "V21_VoLTE UL Audio Gap < 6s (%)"
+                   -- </editor-fold>
+            FROM COUNTERS
+            ORDER BY "Date"
+            ;
+    ` : await sql`With COUNTERS as (SELECT t1."Date",
+                                    -- <editor-fold desc="columns">
+                                       SUM("G01_Availability Cell (%) Num")         AS "G01_Availability Cell (%) Num",
+                                       SUM("G01_Availability Cell (%) Denom")       AS "G01_Availability Cell (%) Denom",
+                                       SUM("G02_Availability TCH (%) Num")          AS "G02_Availability TCH (%) Num",
+                                       SUM("G02_Availability TCH (%) Denom")        AS "G02_Availability TCH (%) Denom",
+                                       SUM("G03_CSSR SD Block Nom1")                AS "G03_CSSR SD Block Nom1",
+                                       SUM("G03_CSSR SD Block Denom1")              AS "G03_CSSR SD Block Denom1",
+                                       SUM("G03_CSSR SD Drop Nom2")                 AS "G03_CSSR SD Drop Nom2",
+                                       SUM("G03_CSSR SD Drop Denom2")               AS "G03_CSSR SD Drop Denom2",
+                                       SUM("G03_CSSR TCH Assign Fail Num3")         AS "G03_CSSR TCH Assign Fail Num3",
+                                       SUM("G03_CSSR TCH Assign Fail Denom3")       AS "G03_CSSR TCH Assign Fail Denom3",
+                                       SUM("G04_SD Blocked Rate (%) Num")           AS "G04_SD Blocked Rate (%) Num",
+                                       SUM("G04_SD Blocked Rate (%) Denom")         AS "G04_SD Blocked Rate (%) Denom",
+                                       SUM("G05_SD Drop Rate (%) Num")              AS "G05_SD Drop Rate (%) Num",
+                                       SUM("G05_SD Drop Rate (%) Denom")            AS "G05_SD Drop Rate (%) Denom",
+                                       SUM("G10_PDCH Block (#)")                    AS "G10_PDCH Block (#)",
+                                       SUM("G11_DL TBF Establishment SR (%) Num")   AS "G11_DL TBF Establishment SR (%) Num",
+                                       SUM("G11_DL TBF Establishment SR (%) Denom") AS "G11_DL TBF Establishment SR (%) Denom",
+                                       SUM("G12_UL TBF Establishment SR (%) Num")   AS "G12_UL TBF Establishment SR (%) Num",
+                                       SUM("G12_UL TBF Establishment SR (%) Denom") AS "G12_UL TBF Establishment SR (%) Denom",
+                                       SUM("G13_PS Drop Rate (%) Num")              AS "G13_PS Drop Rate (%) Num",
+                                       SUM("G13_PS Drop Rate (%) Denom")            AS "G13_PS Drop Rate (%) Denom",
+                                       SUM("G14_PS Traffic (GBytes)")               AS "G14_PS Traffic (GBytes)",
+                                       SUM("G15_TCH Traffic (Erl)")                 AS "G15_TCH Traffic (Erl)",
+                                       SUM("G16_SDCCH Traffic (Erl)")               AS "G16_SDCCH Traffic (Erl)",
+                                       SUM("G17_Handover SR (%) Num")               AS "G17_Handover SR (%) Num",
+                                       SUM("G17_Handover SR (%) Denom")             AS "G17_Handover SR (%) Denom",
+                                       SUM("G18_ICM Band 1 (%) Num")                AS "G18_ICM Band 1 (%) Num",
+                                       SUM("G19_ICM Band 2 (%) Num")                AS "G19_ICM Band 2 (%) Num",
+                                       SUM("G20_ICM Band 3 (%) Num")                AS "G20_ICM Band 3 (%) Num",
+                                       SUM("G21_ICM Band 4 (%) Num")                AS "G21_ICM Band 4 (%) Num",
+                                       SUM("G22_ICM Band 5 (%) Num")                AS "G22_ICM Band 5 (%) Num",
+                                       SUM("G23_Bad ICM (%) Num")                   AS "G23_Bad ICM (%) Num",
+                                       SUM("G24_ICM Band (#) Denom")                AS "G24_ICM Band (#) Denom",
+                                       SUM("G25_Rx Qual DL Good (%) Num")           AS "G25_Rx Qual DL Good (%) Num",
+                                       SUM("G26_Rx Qual DL Bad (%) Num")            AS "G26_Rx Qual DL Bad (%) Num",
+                                       SUM("G27_Rx Qual DL (#) Denom")              AS "G27_Rx Qual DL (#) Denom",
+                                       SUM("G28_Rx Qual UL Good (%) Num")           AS "G28_Rx Qual UL Good (%) Num",
+                                       SUM("G29_Rx Qual UL Bad (%) Num")            AS "G29_Rx Qual UL Bad (%) Num",
+                                       SUM("G30_RxQual UL (#) Denom")               AS "G30_RxQual UL (#) Denom",
+                                       SUM("G31_SQI Good DL (%) Num")               AS "G31_SQI Good DL (%) Num",
+                                       SUM("G32_SQI Accpt DL (%) Num")              AS "G32_SQI Accpt DL (%) Num",
+                                       SUM("G33_SQI Bad DL (%) Num")                AS "G33_SQI Bad DL (%) Num",
+                                       SUM("G34_SQI DL (#) Denom")                  AS "G34_SQI DL (#) Denom",
+                                       SUM("G35_SQI Good UL (%) Num")               AS "G35_SQI Good UL (%) Num",
+                                       SUM("G36_SQI Accpt UL (%) Num")              AS "G36_SQI Accpt UL (%) Num",
+                                       SUM("G37_SQI Bad UL (%) Num")                AS "G37_SQI Bad UL (%) Num",
+                                       SUM("G38_SQI UL (#) Denom")                  AS "G38_SQI UL (#) Denom",
+                                       SUM("G06_TCH Assignment SR (%) Denom")       AS "G06_TCH Assignment SR (%) Denom",
+                                       SUM("G06_TCH Assignment SR (%) Num")         AS "G06_TCH Assignment SR (%) Num",
+                                       SUM("G07_TCH Blocked Rate (%) Denom")        AS "G07_TCH Blocked Rate (%) Denom",
+                                       SUM("G07_TCH Blocked Rate (%) Num")          AS "G07_TCH Blocked Rate (%) Num",
+                                       SUM("G08_TCH Drop Rate (%) Denom")           AS "G08_TCH Drop Rate (%) Denom",
+                                       SUM("G08_TCH Drop Rate (%) Num")             AS "G08_TCH Drop Rate (%) Num",
+                                       SUM("G09_PDCH Establishment SR (%) Denom")   AS "G09_PDCH Establishment SR (%) Denom",
+                                       SUM("G09_PDCH Establishment SR (%) Num")     AS "G09_PDCH Establishment SR (%) Num",
+                                       SUM("G10_PDCH Congestion Rate (%) Denum")    AS "G10_PDCH Congestion Rate (%) Denum",
+                                       SUM("G10_PDCH Congestion Rate (%) Num")      AS "G10_PDCH Congestion Rate (%) Num",
+                                       SUM("G13_DL TBF Drop Rate (%) Denom")        AS "G13_DL TBF Drop Rate (%) Denom",
+                                       SUM("G13_DL TBF Drop Rate (%) Num")          AS "G13_DL TBF Drop Rate (%) Num",
+                                       SUM("G39_2G to 4G Fast Return (#)")          AS "G39_2G to 4G Fast Return (#)"
+                                       -- </editor-fold>
+                                    FROM celcom.stats.gsm_oss_raw_cell as t1
+                                    WHERE ${filterConditions()}
+                                    GROUP BY t1."Date")
+                                    SELECT 
+                                    -- <editor-fold desc="KPIs">
+                                    1 - (("G01_Availability Cell (%) Num")) /
+                                    nullif(("G01_Availability Cell (%) Denom"), 0)                          AS "G01_Availability Cell (%)",
+                                    ("G02_Availability TCH (%) Num") /
+                                    nullif(("G02_Availability TCH (%) Denom"), 0)                               AS "G02_Availability TCH (%)",
+                                    (1 - (("G03_CSSR SD Block Nom1") / nullif(("G03_CSSR SD Block Denom1"), 0))) *
+                                    (1 - (("G03_CSSR SD Drop Nom2") / nullif(("G03_CSSR SD Drop Denom2"), 0))) *
+                                    (("G03_CSSR TCH Assign Fail Num3") /
+                                    nullif(("G03_CSSR TCH Assign Fail Denom3"), 0))                            AS "G03_CSSR (%)",
+                                    ("G04_SD Blocked Rate (%) Num") /
+                                    nullif(("G04_SD Blocked Rate (%) Denom"), 0)                                AS "G04_SD Blocked Rate (%)",
+                                    
+                                    ("G05_SD Drop Rate (%) Num") / nullif(("G05_SD Drop Rate (%) Denom"), 0) AS "G05_SD Drop Rate (%)",
+                                    
+                                    --     NEW KPI
+                                    ("G06_TCH Assignment SR (%) Num") /
+                                    nullif(("G06_TCH Assignment SR (%) Denom"), 0)                              AS "G06_TCH Assignment SR (%)",
+                                    
+                                    --     UPDATED KPI
+                                    ("G07_TCH Blocked Rate (%) Num") /
+                                    nullif(("G07_TCH Blocked Rate (%) Denom"), 0)                               AS "G07_TCH Blocked Rate (%)",
+                                    --     UPDATED KPI
+                                    ("G08_TCH Drop Rate (%) Num") /
+                                    nullif(("G08_TCH Drop Rate (%) Denom"), 0)                                  AS "G08_TCH Drop Rate (%)",
+                                    --     UPDATED KPI
+                                    1 - ("G09_PDCH Establishment SR (%) Num") /
+                                       nullif(("G09_PDCH Establishment SR (%) Denom"), 0)                      AS "G09_PDCH Establishment SR (%)",
+                                    --     UPDATED KPI
+                                    ("G10_PDCH Congestion Rate (%) Num") /
+                                    nullif(("G10_PDCH Congestion Rate (%) Denum"), 0)                           AS "G10_PDCH Congestion Rate (%)",
+                                    
+                                    ("G10_PDCH Block (#)")                                                      AS "G10_PDCH Block (#)",
+                                    
+                                    ("G11_DL TBF Establishment SR (%) Num") /
+                                    NULLIF(("G11_DL TBF Establishment SR (%) Denom"), 0)                        AS "G11_DL TBF Establishment SR (%)",
+                                    
+                                    ("G12_UL TBF Establishment SR (%) Num") /
+                                    nullif(("G12_UL TBF Establishment SR (%) Denom"), 0)                        AS "G12_UL TBF Establishment SR (%)",
+                                    
+                                    ("G13_PS Drop Rate (%) Num") /
+                                    nullif(("G13_PS Drop Rate (%) Denom"), 0)                                   AS "G13_PS Drop Rate (%)",
+                                    
+                                    --     NEW KPI
+                                    ("G13_DL TBF Drop Rate (%) Num") /
+                                    nullif(("G13_DL TBF Drop Rate (%) Denom"), 0)                               as "G13_DL TBF Drop Rate (%)",
+                                    
+                                    ("G14_PS Traffic (GBytes)")                                                 AS "G14_PS Traffic (GBytes)",
+                                    ("G15_TCH Traffic (Erl)")                                                   AS "G15_TCH Traffic (Erl)",
+                                    ("G16_SDCCH Traffic (Erl)")                                                 AS "G16_SDCCH Traffic (Erl)",
+                                    ("G17_Handover SR (%) Num") /
+                                    nullif(("G17_Handover SR (%) Denom"), 0)                                    AS "G17_Handover SR (%)",
+                                    ("G18_ICM Band 1 (%) Num") /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G18_ICM Band 1 (%)",
+                                    ("G19_ICM Band 2 (%) Num") /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G19_ICM Band 2 (%)",
+                                    ("G20_ICM Band 3 (%) Num") /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G20_ICM Band 3 (%)",
+                                    ("G21_ICM Band 4 (%) Num") /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G21_ICM Band 4 (%)",
+                                    ("G22_ICM Band 5 (%) Num") /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G22_ICM Band 5 (%)",
+                                    (("G20_ICM Band 3 (%) Num") + ("G21_ICM Band 4 (%) Num") + ("G22_ICM Band 5 (%) Num")) /
+                                    nullif(("G24_ICM Band (#) Denom"), 0)                                       AS "G23_Bad ICM (%)",
+                                    ("G25_Rx Qual DL Good (%) Num") /
+                                    nullif(("G27_Rx Qual DL (#) Denom"), 0)                                     AS "G25_Rx Qual DL Good (%)",
+                                    ("G26_Rx Qual DL Bad (%) Num") /
+                                    nullif(("G27_Rx Qual DL (#) Denom"), 0)                                     AS "G26_Rx Qual DL Bad (%)",
+                                    ("G28_Rx Qual UL Good (%) Num") /
+                                    nullif(("G30_RxQual UL (#) Denom"), 0)                                      AS "G28_Rx Qual UL Good (%)",
+                                    ("G29_Rx Qual UL Bad (%) Num") /
+                                    nullif(("G30_RxQual UL (#) Denom"), 0)                                      AS "G29_Rx Qual UL Bad (%)",
+                                    ("G31_SQI Good DL (%) Num") /
+                                    nullif(("G34_SQI DL (#) Denom"), 0)                                         AS "G31_SQI Good DL (%)",
+                                    ("G32_SQI Accpt DL (%) Num") /
+                                    nullif(("G34_SQI DL (#) Denom"), 0)                                         AS "G32_SQI Accpt DL (%)",
+                                    ("G33_SQI Bad DL (%) Num") /
+                                    nullif(("G34_SQI DL (#) Denom"), 0)                                         AS "G33_SQI Bad DL (%)",
+                                    ("G35_SQI Good UL (%) Num") /
+                                    nullif(("G38_SQI UL (#) Denom"), 0)                                         AS "G35_SQI Good UL (%)",
+                                    ("G36_SQI Accpt UL (%) Num") /
+                                    nullif(("G38_SQI UL (#) Denom"), 0)                                         AS "G36_SQI Accpt UL (%)",
+                                    ("G37_SQI Bad UL (%) Num") /
+                                    nullif(("G38_SQI UL (#) Denom"), 0)                                         AS "G37_SQI Bad UL (%)",
+                                    ("G39_2G to 4G Fast Return (#)")                                            as "G39_2G to 4G Fast Return (#)"
+                                    -- </editor-fold>
+                                FROM COUNTERS
+     `;
+    const endTime = new Date();
+    console.log(`${(endTime - startTime) / 1000}s`);
+
+    const {headers, values} = arrayToCsv(results, false);
+
+
+    response.status(200).json({
+            success: true,
+            headers: headers.join('\t'),
+            data: format === 'csv' ? values.join('\n') : results,
+        }
+    );
+}
+
+
 module.exports = {
     getAggregatedStats,
     getAggregatedStatsWeek,
     getCellStats,
     getCellMapping,
     getGroupedCellsStats,
+    excelTestFunc
 };

@@ -88,3 +88,10 @@ BEGIN
    RETURN NULL;
 END;
 $$;
+
+
+CREATE TRIGGER history_test_data
+AFTER INSERT OR UPDATE OR DELETE
+ON stats.test_data
+    FOR EACH STATEMENT
+EXECUTE PROCEDURE update_history();

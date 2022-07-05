@@ -5,8 +5,16 @@ const statsQueries = require('../db/celcom/statsQueries');
 const asyncHandler = require("../middleware/async");
 const PostgresBackend = require("../db/PostgresBackend");
 const {createListeners, createListener, sendEmail} = require("../db/utils");
+const sql = require("../db/celcom/PgJsBackend");
+const {arrayToCsv} = require("./utils");
+const {excelTestFunc} = require("../db/celcom/statsQueries");
 
-router.use(auth('celcom'))
+router.use(auth('celcom'));
+router.locals = {
+    lastEmailSentAt: {
+
+    }
+};
 
 const cpg = new PostgresBackend('celcom');
 const client = cpg.getClient();
@@ -20,12 +28,18 @@ createListener(client, 'new_data', async (data) => {
         sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', `Auto Messaging: Aggregation completed [${tech}]`, message);
         return;
     }
+
     const message = `New data has been added to ${updatedTable} in database. Aggregation are being performed.`;
+    if (router.locals.lastEmailSentAt[updatedTable] && (Date.now() - router.locals.lastEmailSentAt[updatedTable]) < 1000 * 60 * 30) {
+        return;
+    }7
     sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', 'Auto Messaging: New Data Processed', message);
+    router.locals.lastEmailSentAt[updatedTable] = new Date();
+
 });
 
 function handler(req, res) {
-    return res.send('Hello Celcom');
+    return res.send('Hello Celcom 321');
 }
 
 function handler2(req, res) {
@@ -47,5 +61,10 @@ router.get('/gsm-stats/aggregateWeek', asyncHandler(statsQueries.getAggregatedSt
 router.get('/gsm-stats/cellStats', asyncHandler(statsQueries.getCellStats('GSM')));
 router.get('/gsm-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('GSM')));
 router.get('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM')));
+router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('ALL')));
+
+
+router.post('/testExcel', asyncHandler(excelTestFunc));
+
 
 module.exports = router;

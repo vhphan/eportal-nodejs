@@ -31,7 +31,8 @@ const networkKpiList = {
         "RRC Setup Success Rate (Signaling) (%)",
         "gNobeB CPU Load",
         "Packet Loss (DL)",
-        "Packet Loss (UL)"
+        "Packet Loss (UL)",
+        "Latency (only Radio interface)"
     ],
     "LTE": [
         "RRC Setup Success Rate (Service) (%)",
@@ -83,9 +84,7 @@ const clusterDailyStatsNR = async (request, response) => {
     const results = await sql`
                     SELECT t1."DATE_ID"::timestamp without time zone as time, 
                             t1."Cluster_ID" as object,
-                            ${sql(columns)},
-                            "Latency"
-
+                            ${sql(columns)}
                         FROM dnb.stats_group."DataTableClusterKPI" as t1
                         LEFT JOIN dnb.stats_group."CPULoadClusterKPI" as t2 on t1."Cluster_ID"=t2."Cluster_ID" AND t1."DATE_ID"=t2."DATE_ID"
                         LEFT JOIN dnb.stats_group."PacketLossClusterKPI" as t3 on t1."Cluster_ID"=t3."Cluster_ID" AND t1."DATE_ID"=t3."DATE_ID"
@@ -339,7 +338,7 @@ const customCellListStatsNR = async (request, response) => {
                        0)                                                                               as "UL 256QAM%",
                100 * "pmRrcConnEstabSuccMos" /
                nullif("pmRrcConnEstabAttMos" - "pmRrcConnEstabAttReattMos", 0)                          as "RRC Setup Success Rate (Signaling) (%)",
-               "Sum(pmRadioPuschTable1McsDistr) for" / nullif("Sum(pmRadioPuschTable2McsDistr) for", 0) as "Latency"
+               "Sum(pmRadioPuschTable1McsDistr) for" / nullif("Sum(pmRadioPuschTable2McsDistr) for", 0) as "Latency (only Radio interface)"
                -- </editor-fold>
         FROM COUNTERS ORDER BY "time";
     `;
@@ -622,6 +621,26 @@ const customCellListStatsLTE2 = async (request, response) => {
     response.status(200).json(results);
 }
 
+const clusterHourlyStatsNR = async (request, response) => {
+    const {clusterId} = request.query;
+    const columns = networkKpiList["NR"];
+    const results = await sql`
+                    SELECT (t1."DAY" + interval '1 hour' * t1."HOUR")::timestamp(0) AS "time", 
+                            t1."Cluster_ID" as object,
+                            ${sql(columns)}
+                        FROM dnb.stats_group_hourly."DataTableClusterKPI" as t1
+                        LEFT JOIN dnb.stats_group_hourly."CPULoadClusterKPI" as t2 on t1."Cluster_ID"=t2."Cluster_ID" 
+                        AND t1."DAY"=t2."DAY"
+                        AND t1."HOUR"=t2."HOUR"
+                        LEFT JOIN dnb.stats_group_hourly."PacketLossClusterKPI" as t3 on t1."Cluster_ID"=t3."Cluster_ID" 
+                        AND t1."DAY"=t3."DAY"
+                        AND t1."HOUR"=t3."HOUR"
+                        WHERE t1."Cluster_ID"=${clusterId}
+                        ORDER BY t1."DAY", t1."HOUR"
+                        `;
+    response.status(200).json(results);
+}
+
 module.exports = {
     customCellListStatsLTE,
     customCellListStatsLTE2,
@@ -629,5 +648,6 @@ module.exports = {
     customCellListStatsNR2,
     clusterDailyStatsNR,
     clusterDailyStatsLTE,
+    clusterHourlyStatsNR,
     testQuery
 }
