@@ -641,6 +641,23 @@ const clusterHourlyStatsNR = async (request, response) => {
     response.status(200).json(results);
 }
 
+const clusterHourlyStatsLTE = async (request, response) => {
+    const {clusterId} = request.query;
+    const columns = networkKpiList["LTE"];
+    const results = await sql`
+                    SELECT (t1."DAY" + interval '1 hour' * t1."HOUR")::timestamp(0) AS "time", 
+                            t1."Cluster_ID" as object,
+                            ${sql(columns)}
+                        FROM dnb.stats_group_hourly."NRCELLFDDClusterKPI" as t1
+                        LEFT JOIN dnb.stats_group_hourly."PRBCQIRSSITAClusterKPI" as t2 on t1."Cluster_ID"=t2."Cluster_ID" 
+                        AND t1."DAY"=t2."DAY"
+                        AND t1."HOUR"=t2."HOUR"
+                        WHERE t1."Cluster_ID"=${clusterId}
+                        ORDER BY t1."DAY", t1."HOUR"
+                        `;
+    response.status(200).json(results);
+}
+
 module.exports = {
     customCellListStatsLTE,
     customCellListStatsLTE2,
@@ -649,5 +666,6 @@ module.exports = {
     clusterDailyStatsNR,
     clusterDailyStatsLTE,
     clusterHourlyStatsNR,
+    clusterHourlyStatsLTE,
     testQuery
 }
