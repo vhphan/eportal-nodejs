@@ -21,6 +21,7 @@
     "echarts": "^5.3.1",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
+    "express-validator": "^6.14.2",
     "exprss": "0.0.1-security",
     "helmet": "^5.0.2",
     "knex": "^1.0.2",

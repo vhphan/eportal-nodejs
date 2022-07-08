@@ -95,3 +95,5 @@ AFTER INSERT OR UPDATE OR DELETE
 ON stats.test_data
     FOR EACH STATEMENT
 EXECUTE PROCEDURE update_history();
+
+SELECT * FROM information_schema.columns WHERE table_name = 'gsm_aggregates_columns';

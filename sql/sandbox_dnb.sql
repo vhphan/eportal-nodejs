@@ -72,3 +72,48 @@ CREATE TRIGGER history_cell_mapping
     ON rfdb.cell_mapping
     FOR EACH STATEMENT
 EXECUTE PROCEDURE update_history();
+
+
+SELECT (t1."DAY" + interval '1 hour' * t1."HOUR")::timestamp(0) without time zone AS "time",
+       t1."Cluster_ID"                                          as object,
+       "Cell Availability",
+       "ENDC SR",
+       "E-RAB Block Rate",
+       "Erab Drop Call rate (sgNB)",
+       "Intra-SgNB Pscell Change Success Rate",
+       "Inter-SgNB PSCell Change Success Rate",
+       "Resource Block Utilizing Rate (DL)",
+       "Resource Block Utilizing Rate (UL)",
+       "Average CQI",
+       "UL BLER",
+       "Avg PUSCH UL RSSI",
+       "DL User Throughput",
+       "UL User Throughput",
+       "DL Cell Throughput",
+       "UL Cell Throughput",
+       "DL Data Volume",
+       "UL Data Volume",
+       "Max of RRC Connected User (ENDC)",
+       "Max of Active User",
+       "DL QPSK %",
+       "DL 16QAM%",
+       "DL 64QAM%",
+       "DL 256QAM%",
+       "UL QPSK %",
+       "UL 16QAM%",
+       "UL 64QAM%",
+       "UL 256QAM%",
+       "RRC Setup Success Rate (Signaling) (%)",
+       "gNobeB CPU Load",
+       "Packet Loss (DL)",
+       "Packet Loss (UL)",
+       "Latency (only Radio interface)"
+FROM dnb.stats_group_hourly."DataTableClusterKPI" as t1
+         LEFT JOIN dnb.stats_group_hourly."CPULoadClusterKPI" as t2 on t1."Cluster_ID" = t2."Cluster_ID"
+    AND t1."DAY" = t2."DAY"
+    AND t1."HOUR" = t2."HOUR"
+         LEFT JOIN dnb.stats_group_hourly."PacketLossClusterKPI" as t3 on t1."Cluster_ID" = t3."Cluster_ID"
+    AND t1."DAY" = t3."DAY"
+    AND t1."HOUR" = t3."HOUR"
+WHERE t1."Cluster_ID" = 'PKUL_01'
+ORDER BY t1."DAY", t1."HOUR";

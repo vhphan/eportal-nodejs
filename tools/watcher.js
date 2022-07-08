@@ -13,5 +13,5 @@ function watch(dir) {
         }, 10_000)
     });
 }
-
+// Celcom my edb /home/eproject/veehuen/myedb/Myedb/Myedb/*.rar
 watch('C:\\Users\\eveepha\\PycharmProjects\\eportal-nodejs\\temp');  //<- watching the ./watchme/ directory

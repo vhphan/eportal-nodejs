@@ -14,9 +14,11 @@ const {auth} = require("../auth");
 const {createProxyMiddleware} = require("http-proxy-middleware");
 const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/redisCache");
 const needle = require("needle");
+const {gMap} = require("./utils");
 
 
 router.use(auth('dnb'))
+
 // router.use(compression);
 
 function handler(req, res) {
@@ -35,7 +37,8 @@ router.route('/tabulatorConfig')
     .get(pgDb.getTabulatorConfig)
     .post(pgDb.saveTabulatorConfig);
 
-router.get('/tabulatorData', cache15m, asyncHandler(pgDb.getTabulatorData));
+router.get('/tabulatorData', cache15m,
+    asyncHandler(pgDb.getTabulatorData));
 
 // router.route('testtest')
 //     .get(getHandler)
@@ -186,28 +189,8 @@ let postgrestProxy = createProxyMiddleware({
 });
 router.all('/pgr/*', postgrestProxy);
 
-const gMapUrl = `https://maps.googleapis.com/maps/api/js`
-router.get('/googleMap', cache('2 minutes'), async (req, res, next) => {
-  try {
-    const params = new URLSearchParams({
-      key: process.env.GOOGLE_KEY,
-        libraries: 'places,visualization,geometries',
-        v: 'quarterly'
-    })
 
-    const apiRes = await needle('get', `${gMapUrl}?${params}`)
-    const data = apiRes.body
-
-    // Log the request to the public API
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`REQUEST: ${gMapUrl}?${params}`)
-    }
-
-    res.status(200).send(data)
-  } catch (error) {
-    next(error)
-  }
-})
+router.get('/googleMap', cache('2 minutes'), gMap())
 
 let geoServerProxy = createProxyMiddleware({
     changeOrigin: true,
@@ -225,7 +208,7 @@ router.get('/testQueryPGJS', pgJs.testQuery);
 
 router.get('/nbrRelation', pgJs.getNbrRelation);
 
-router.get('/checkUser', async(req, res) => {
+router.get('/checkUser', async (req, res) => {
     res.status(200).send({
         success: true,
     });

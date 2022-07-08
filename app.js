@@ -108,4 +108,4 @@ process.on('unhandledRejection', (err, promise) => {
 });
 
 
-// createWatcherProcess();
+createWatcherProcess();

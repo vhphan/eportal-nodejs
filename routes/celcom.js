@@ -6,14 +6,15 @@ const asyncHandler = require("../middleware/async");
 const PostgresBackend = require("../db/PostgresBackend");
 const {createListeners, createListener, sendEmail} = require("../db/utils");
 const sql = require("../db/celcom/PgJsBackend");
-const {arrayToCsv} = require("./utils");
+const {arrayToCsv, gMap} = require("./utils");
 const {excelTestFunc} = require("../db/celcom/statsQueries");
+const {cache12h, cache} = require("../middleware/redisCache");
+const pgDbGeo = require("../db/pgQueriesGeo");
+const {getCells, getClusters} = require("../db/celcom/celcomGeoQueries");
 
 router.use(auth('celcom'));
 router.locals = {
-    lastEmailSentAt: {
-
-    }
+    lastEmailSentAt: {}
 };
 
 const cpg = new PostgresBackend('celcom');
@@ -32,7 +33,8 @@ createListener(client, 'new_data', async (data) => {
     const message = `New data has been added to ${updatedTable} in database. Aggregation are being performed.`;
     if (router.locals.lastEmailSentAt[updatedTable] && (Date.now() - router.locals.lastEmailSentAt[updatedTable]) < 1000 * 60 * 30) {
         return;
-    }7
+    }
+    7
     sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', 'Auto Messaging: New Data Processed', message);
     router.locals.lastEmailSentAt[updatedTable] = new Date();
 
@@ -63,8 +65,19 @@ router.get('/gsm-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('G
 router.get('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM')));
 router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('ALL')));
 
+router.get('/googleMap', cache('2 minutes'), gMap())
 
 router.post('/testExcel', asyncHandler(excelTestFunc));
 
+router.get(
+    '/clustersPolygons',
+    cache12h,
+    asyncHandler(getClusters)
+)
+
+router.get(
+    '/geojson',
+    cache12h,
+    asyncHandler(getCells));
 
 module.exports = router;

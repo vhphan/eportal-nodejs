@@ -1,6 +1,5 @@
 const sql = require('./PgJsBackend');
-const {response} = require("express");
-const {lteAggColumns} = require("./constants");
+const {lteCounters} = require("./constants");
 const {arrayToCsv} = require("../../routes/utils");
 
 
@@ -428,7 +427,7 @@ const getCellStats = (tech) => async (request, response) => {
     const numOfRows = results.length;
     return response.status(200).json({
         success: true,
-        headers: headers.join('\t'),
+        headers: format === 'csv' ? headers.join('\t'): headers,
         data: format === 'csv' ? values.join('\n') : results,
         numOfRows,
         numOfCols,
@@ -736,7 +735,7 @@ const getGroupedCellsStats = (tech) => async (request, response) => {
 async function excelTestFunc(request, response) {
     console.log(request);
     const format = request.body.format || 'csv';
-    const tech = request.body.tech || 'LTE';
+    const tech = request.query.tech || request.body.tech || 'LTE';
 
     const region = request.body['Region'];
     const filterRegion = !!region;
@@ -761,9 +760,8 @@ async function excelTestFunc(request, response) {
     const filterConditions = () => sql` ${regionFilterFunc()} ${stateFilterFunc()} ${cboClusterFilterFunc()} ${netClusterFilterFunc()} `;
 
     const startTime = new Date()
-    const results = tech === 'LTE' ? await sql`
-                                    WITH COUNTERS AS (SELECT t1."Date",
-                                    -- <editor-fold desc="Columns">
+    const sqlLTE = () => sql`WITH LCOUNTERS AS (SELECT t1."Date",
+                                        -- <editor-fold desc="Columns">
                                     SUM("L02_RRC CSSR (%) Num")                              AS "L02_RRC CSSR (%) Num",
                                     SUM("L02_RRC CSSR (%) Denom")                            AS "L02_RRC CSSR (%) Denom",
                                     SUM("L03_RRC CSSR Serv (%) Num")                         AS "L03_RRC CSSR Serv (%) Num",
@@ -918,11 +916,16 @@ async function excelTestFunc(request, response) {
                                     SUM("V21_VoLTE UL Audio Gap < 6s (%) Num")               AS "V21_VoLTE UL Audio Gap < 6s (%) Num",
                                     SUM("V21_VoLTE UL Audio Gap < 6s (%) Denom")             AS "V21_VoLTE UL Audio Gap < 6s (%) Denom"
                                     -- </editor-fold>
-                                      FROM celcom.stats.lte_aggregates_columns as t1
+                                        FROM celcom.stats.lte_aggregates_columns as t1
                                         WHERE 
                                         ${filterConditions()}
                               GROUP BY "Date") 
             SELECT "Date":: varchar(10)                                             as "Date",
+                   
+                   -- <editor-fold desc="LTE COUNTERS">
+                   "L02_RRC CSSR (%) Num","L02_RRC CSSR (%) Denom","L03_RRC CSSR Serv (%) Num","L03_RRC CSSR Serv (%) Denom","L04_ERAB CSSR (%) Num","L04_ERAB CSSR (%) Denom","L05_ERAB DR (%) Num","L05_ERAB DR (%) Denom","L06_ERAB DR (%) Num","L06_ERAB DR (%) Denom","L06_ERAB Drop due to Cell Down Time","L06_ERAB Drop due to Cell Down Time (PNR)","L06_ERAB Drop due to contact with UE lost","L06_ERAB Drop due to HO Exe failure","L06_ERAB Drop due to HO Preparation","L06_ERAB Drop due to S1/X2 Down / Tn Res Unavail","L06_ERAB Drop due to UE Pre-emption","L07_Packet Loss Rate DL (%) Num","L07_Packet Loss Rate DL (%) Denom","L08_Packet Loss Rate UL (%) Num","L08_Packet Loss Rate UL (%) Denom","L09_IAF HO Prep SR (%) Num","L09_IAF HO Prep SR (%) Denom","L09_IAF HO Exe SR (%) Num","L09_IAF HO Exe SR (%) Denom","L10_IEF HO Prep SR (%) Num","L10_IEF HO Prep SR (%) Denom","L10_IEF HO Exe SR (%) Num","L10_IEF HO Exe SR (%) Denom","L11_Intra LTE HO Prep SR (%) Num","L11_Intra LTE HO Prep SR (%) Denom","L11_Intra LTE HO Exe SR (%) Num","L11_Intra LTE HO Exe SR (%) Denom","L12_IRAT HOSR (%) Num","L12_IRAT HOSR (%) Denom","L13_Cell NotAvail (%) Num","L13_Cell NotAvail (%) Denom","L14_PSDL Trf (GB)","L14_PSUL Trf (GB)","L15_Integrity DL Latency (ms) Num","L15_Integrity DL Latency (ms) Denom","L16_Avg DL Thp Cell (Mbps) Num","L16_Avg DL Thp Cell (Mbps) Denom","L17_Avg UL Thp Cell (Mbps) Num","L17_Avg UL Thp Cell (Mbps) Denom","L18_Avg DL Thp User (Mbps) Num","L18_Avg DL Thp User (Mbps) Denom","L19_Avg UL Thp User (Mbps) Num","L19_Avg UL Thp User (Mbps) Denom","L23_Avg UL Interference PUSCH (dBm) Num","L23_Avg UL Interference PUSCH (dBm) Denom","L23_Avg UL Interference PUCCH (dBm) Num","L23_Avg UL Interference PUCCH (dBm) Denom","L24_PRB Util DL (%) Num","L24_PRB Util DL (%) Denom","L25_PRB Util UL (%) Num","L25_PRB Util UL (%) Denom","L26_CA User (#) Num","L26_CA User (#) Denom","L27_CA Capable User (#) Num","L27_CA Capable User (#) Denom","L29_CA Thpt (Mbps) Num","L29_CA Thpt (Mbps) Denom","L30_DL BLER (%) Num","L30_DL BLER (%) Denom","L31_UL BLER (%) Num","L31_UL BLER (%) Denom","L32_Modulation DL QPSK (#)","L32_Modulation DL 16QAM (#)","L32_Modulation DL 64QAM (#)","L32_Modulation DL 256QAM (#)","L33_Average CQI (#) Num","L33_Average CQI (#) Denom","L34_Average RSRP (dBm) Num","L34_Average RSRP (dBm) Denom","L35_RSRP <-110 dBm (%) Num","L35_RSRP <-110 dBm (%) Denom","L36_Average SINR PUSCH (dB) Num","L36_Average SINR PUSCH (dB) Denom","L36_Average SINR PUCCH (dB) Num","L36_Average SINR PUCCH (dB) Denom","L37_Spectral Efficiency (Bit/s/Hz) Num","L37_Spectral Efficiency (Bit/s/Hz) Denom","S01_Accessibility SIP QCI5 (%) Num","S01_Accessibility SIP QCI5 (%) Denom","S01_Retainability SIP QCI5 (%) Num","S01_Retainability SIP QCI5 (%) Denom","S01_RRC Re-estab SR QCI5 (%) Num","S01_RRC Re-estab SR QCI5 (%) Denom","V01_E-RAB Establisment SR QCI1 (%) Num","V01_E-RAB Establisment SR QCI1 (%) Denom","V02_E-RAB Retainability QCI1 (%) Num","V02_E-RAB Retainability QCI1 (%) Denom","V02_VoLTE Drop due to Cell Down Time","V02_VoLTE Drop due to contact with UE lost","V02_VoLTE Drop due to HO Exe Failure","V02_VoLTE Drop due to HO Preparation","V02_VoLTE Drop due to part. ERAB path switch fail","V02_VoLTE Drop due to S1/X2 Down / Tn Res Unavail","V03_RRC Re-estab SR QCI1 (%) Num","V03_RRC Re-estab SR QCI1 (%) Denom","V04_VoLTE Traffic (Erlang)","V05_VoLTE User (#)","V06_VoLTE Packet Loss DL (%) Num","V06_VoLTE Packet Loss DL (%) Denom","V07_VoLTE Packet Loss UL (%) Num","V07_VoLTE Packet Loss UL (%) Denom","V08_VoLTE IAF HO SR (%) Num","V08_VoLTE IAF HO SR (%) Denom","V09_VoLTE IEF HO SR (%) Num","V09_VoLTE IEF HO SR (%) Denom","V10_RRC RwR CSFB L2G (#)","V10_RRC RwR CSFB L2U (#)","V10_CSFB Indicators Received (#)","V10_RRC RwR SC L2G (#)","V10_RRC RwR SC L2U (#)","V11_VoLTE Integrity DL Latency (ms) Num","V11_VoLTE Integrity DL Latency (ms) Denom","V12_VoLTE Integrity Cell (%) Num","V12_VoLTE Integrity Cell (%) Denom","V13_VoLTE Integrity UE (%) Num","V13_VoLTE Integrity UE (%) Denom","V14_DL Silent exp per VoLTE user (ms) Num","V14_DL Silent exp per VoLTE user (ms) Denom","V15_UL Silent exp per VoLTE user (ms) Num","V15_UL Silent exp per VoLTE user (ms) Denom","V16_SRVCC HO to GERAN Prep SR (%) Num","V16_SRVCC HO to GERAN Prep SR (%) Denom","V16_SRVCC HO to GERAN Exe SR (%) Num","V16_SRVCC HO to GERAN Exe SR (%) Denom","V17_SRVCC HO to GERAN Prep SR (%) Num PLMN0","V17_SRVCC HO to GERAN Prep SR (%) Denom PLMN0","V17_SRVCC HO to GERAN Exe SR (%) Num PLMN0","V17_SRVCC HO to GERAN Exe SR (%) Denom PLMN0","V18_SRVCC HO to UTRAN Prep SR (%) Num","V18_SRVCC HO to UTRAN Prep SR (%) Denom","V18_SRVCC HO to UTRAN Exe SR (%) Num","V18_SRVCC HO to UTRAN Exe SR (%) Denom","L20_Active UE User (#)","L21_Avg RRC User (#)","L21_Max RRC User (#)","L22_Avg ERAB User (#)","L22_Max ERAB User (#)","L26_CA User (#)","L27_CA Capable User (#)","V10_CSFB Initiation Success Rate (%) Num","V10_CSFB Indicators Received (#) Denom","V19_L2G SRVCC (%) Num","V19_L2G SRVCC (%) Denom","V20_CSFB 2G (%) Num","V20_CSFB 2G (%) Denom","V21_VoLTE UL Audio Gap < 6s (%) Num", "V21_VoLTE UL Audio Gap < 6s (%) Denom", 
+                   -- </editor-fold>
+
                    -- <editor-fold desc="LTE KPIS">
                    ("L02_RRC CSSR (%) Num") / nullif(("L02_RRC CSSR (%) Denom"), 0) as "L02_RRC CSSR (%)",
                    ("L03_RRC CSSR Serv (%) Num") /
@@ -1077,10 +1080,12 @@ async function excelTestFunc(request, response) {
                    ("V21_VoLTE UL Audio Gap < 6s (%) Num") /
                    nullif(("V21_VoLTE UL Audio Gap < 6s (%) Denom"), 0)             as "V21_VoLTE UL Audio Gap < 6s (%)"
                    -- </editor-fold>
-            FROM COUNTERS
+      
+            FROM LCOUNTERS
             ORDER BY "Date"
             ;
-    ` : await sql`With COUNTERS as (SELECT t1."Date",
+    `;
+    const sqlGSM = () => sql`With GCOUNTERS as (SELECT t1."Date",
                                     -- <editor-fold desc="columns">
                                        SUM("G01_Availability Cell (%) Num")         AS "G01_Availability Cell (%) Num",
                                        SUM("G01_Availability Cell (%) Denom")       AS "G01_Availability Cell (%) Denom",
@@ -1143,11 +1148,17 @@ async function excelTestFunc(request, response) {
                                        SUM("G13_DL TBF Drop Rate (%) Num")          AS "G13_DL TBF Drop Rate (%) Num",
                                        SUM("G39_2G to 4G Fast Return (#)")          AS "G39_2G to 4G Fast Return (#)"
                                        -- </editor-fold>
-                                    FROM celcom.stats.gsm_oss_raw_cell as t1
+                                    FROM celcom.stats.gsm_aggregates_columns as t1
                                     WHERE ${filterConditions()}
                                     GROUP BY t1."Date")
                                     SELECT 
-                                    -- <editor-fold desc="KPIs">
+                                    "Date":: varchar(10)                                             as "Date",
+                                    
+                                    -- <editor-fold desc="GSM COUNTERS">
+                                    "G01_Availability Cell (%) Num","G01_Availability Cell (%) Denom","G02_Availability TCH (%) Num","G02_Availability TCH (%) Denom","G03_CSSR SD Block Nom1","G03_CSSR SD Block Denom1","G03_CSSR SD Drop Nom2","G03_CSSR SD Drop Denom2","G03_CSSR TCH Assign Fail Num3","G03_CSSR TCH Assign Fail Denom3","G04_SD Blocked Rate (%) Num","G04_SD Blocked Rate (%) Denom","G05_SD Drop Rate (%) Num","G05_SD Drop Rate (%) Denom","G10_PDCH Block (#)","G11_DL TBF Establishment SR (%) Num","G11_DL TBF Establishment SR (%) Denom","G12_UL TBF Establishment SR (%) Num","G12_UL TBF Establishment SR (%) Denom","G13_PS Drop Rate (%) Num","G13_PS Drop Rate (%) Denom","G14_PS Traffic (GBytes)","G15_TCH Traffic (Erl)","G16_SDCCH Traffic (Erl)","G17_Handover SR (%) Num","G17_Handover SR (%) Denom","G18_ICM Band 1 (%) Num","G19_ICM Band 2 (%) Num","G20_ICM Band 3 (%) Num","G21_ICM Band 4 (%) Num","G22_ICM Band 5 (%) Num","G23_Bad ICM (%) Num","G24_ICM Band (#) Denom","G25_Rx Qual DL Good (%) Num","G26_Rx Qual DL Bad (%) Num","G27_Rx Qual DL (#) Denom","G28_Rx Qual UL Good (%) Num","G29_Rx Qual UL Bad (%) Num","G30_RxQual UL (#) Denom","G31_SQI Good DL (%) Num","G32_SQI Accpt DL (%) Num","G33_SQI Bad DL (%) Num","G34_SQI DL (#) Denom","G35_SQI Good UL (%) Num","G36_SQI Accpt UL (%) Num","G37_SQI Bad UL (%) Num","G38_SQI UL (#) Denom","G06_TCH Assignment SR (%) Denom","G06_TCH Assignment SR (%) Num","G07_TCH Blocked Rate (%) Denom","G07_TCH Blocked Rate (%) Num","G08_TCH Drop Rate (%) Denom","G08_TCH Drop Rate (%) Num","G09_PDCH Establishment SR (%) Denom","G09_PDCH Establishment SR (%) Num","G10_PDCH Congestion Rate (%) Denum","G10_PDCH Congestion Rate (%) Num","G13_DL TBF Drop Rate (%) Denom","G13_DL TBF Drop Rate (%) Num","G39_2G to 4G Fast Return (#)",
+                                    -- </editor-fold>
+
+                                    -- <editor-fold desc="GSM KPIs">
                                     1 - (("G01_Availability Cell (%) Num")) /
                                     nullif(("G01_Availability Cell (%) Denom"), 0)                          AS "G01_Availability Cell (%)",
                                     ("G02_Availability TCH (%) Num") /
@@ -1232,18 +1243,28 @@ async function excelTestFunc(request, response) {
                                     nullif(("G38_SQI UL (#) Denom"), 0)                                         AS "G37_SQI Bad UL (%)",
                                     ("G39_2G to 4G Fast Return (#)")                                            as "G39_2G to 4G Fast Return (#)"
                                     -- </editor-fold>
-                                FROM COUNTERS
+                                
+                                    FROM GCOUNTERS
      `;
+    const results = tech === 'LTE' ? await sql`${sqlLTE()}` : await sql`${sqlGSM()}`;
     const endTime = new Date();
+
     console.log(`${(endTime - startTime) / 1000}s`);
 
+    if (format === 'json') {
+        response.status(200).json({
+                success: true,
+                headers,
+                data: results,
+            }
+        );
+        return;
+    }
     const {headers, values} = arrayToCsv(results, false);
-
-
     response.status(200).json({
             success: true,
             headers: headers.join('\t'),
-            data: format === 'csv' ? values.join('\n') : results,
+            data: values.join('\n'),
         }
     );
 }

@@ -87,7 +87,7 @@ const getCells = async (request, response) => {
 }
 
 const getClusters = async (request, response) => {
-    fs.readFile('files/clusters.geojson', 'utf8', (err, data) => {
+    fs.readFile('files/dnb/clusters.geojson', 'utf8', (err, data) => {
         if (err) {
             throw err;
         }
