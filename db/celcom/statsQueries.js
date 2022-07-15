@@ -1,6 +1,7 @@
 const sql = require('./PgJsBackend');
-const {lteCounters} = require("./constants");
+const {lteCounters, gsmKpis, lteKpis} = require("./constants");
 const {arrayToCsv} = require("../../routes/utils");
+const {renameProp, renameProps} = require("../../tools/utils");
 
 
 const getAggregatedStats = (tech) => async (request, response) => {
@@ -252,8 +253,9 @@ const getCellStats = (tech) => async (request, response) => {
                 `
     } else {
         results = await sql`
-                SELECT "Date",
-                   t1."EUtranCellFDD",
+                SELECT 
+                    "Date",
+                    t1."EUtranCellFDD",
                    
                     SUM("L02_RRC CSSR (%) Num") / nullif(SUM("L02_RRC CSSR (%) Denom"), 0) as "L02_RRC CSSR (%)",
                     SUM("L03_RRC CSSR Serv (%) Num") /
@@ -422,12 +424,25 @@ const getCellStats = (tech) => async (request, response) => {
                 `
         //</editor-fold>
     }
+
+    if (format === 'json') {
+        const cellIdColumn = tech === 'LTE' ? 'EUtranCellFDD' : 'Cell Name';
+        results.forEach(d => {
+            d['Date'] = d['Date'].toISOString().split('T')[0]
+        });
+        response.status(200).json({
+            success: true,
+            data: results.map(result => renameProps(result, ["Date", cellIdColumn], ['time', 'object']))
+        });
+        return;
+    }
+
     const {headers, values} = arrayToCsv(results);
     const numOfCols = Object.keys(results[0]).length;
     const numOfRows = results.length;
     return response.status(200).json({
         success: true,
-        headers: format === 'csv' ? headers.join('\t'): headers,
+        headers: format === 'csv' ? headers.join('\t') : headers,
         data: format === 'csv' ? values.join('\n') : results,
         numOfRows,
         numOfCols,
@@ -731,6 +746,28 @@ const getGroupedCellsStats = (tech) => async (request, response) => {
 
 }
 
+const getClusterStats = (tech) => async (request, response) => {
+    const {clusterId} = request.query;
+    const layerColumn = tech.toLowerCase() === 'lte' ? 'Layer' : 'SystemID';
+    const table = `celcom.stats.${tech.toLowerCase()}_aggregates`;
+    const results = await sql`
+    SELECT 
+        "Date"::varchar(10) as "time",
+        ${sql(layerColumn)} as "object",
+       *
+    FROM ${sql(table)} 
+    WHERE "Net_Cluster_Code"=${clusterId}
+    ORDER BY "Date"
+    `;
+    results.forEach(d => {
+        d['Date'] = d['Date'].toISOString().split('T')[0];
+        d[layerColumn] = d[layerColumn] === null? 'All' : d[layerColumn];
+    });
+    response.status(200).json({
+        success: true,
+        data: results.map(result => renameProps(result, ["Date", layerColumn], ['time', 'object']))
+    });
+}
 
 async function excelTestFunc(request, response) {
     console.log(request);
@@ -1254,7 +1291,6 @@ async function excelTestFunc(request, response) {
     if (format === 'json') {
         response.status(200).json({
                 success: true,
-                headers,
                 data: results,
             }
         );
@@ -1276,5 +1312,6 @@ module.exports = {
     getCellStats,
     getCellMapping,
     getGroupedCellsStats,
-    excelTestFunc
+    excelTestFunc,
+    getClusterStats
 };

@@ -17,7 +17,27 @@ function createWatcherProcess() {
     });
 }
 
+const renameProp = (
+    oldProp,
+    newProp,
+{ [oldProp]: valueOfOldProp, ...others }
+) => ({
+    [newProp]: valueOfOldProp,
+    ...others
+});
+
+// function to rename multiple properties in an object\
+function renameProps(obj, oldProps, newProps) {
+    return Object.keys(obj).reduce((acc, key) => {
+        const newKey = oldProps.indexOf(key) > -1 ? newProps[oldProps.indexOf(key)] : key;
+        acc[newKey] = obj[key];
+        return acc;
+    }, {});
+}
 
 module.exports = {
-    createWatcherProcess
+    createWatcherProcess,
+    renameProp,
+    renameProps
+
 }

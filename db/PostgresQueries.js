@@ -6,19 +6,19 @@ const {use} = require("express/lib/router");
 const {response} = require("express");
 const {logger} = require("../middleware/logger");
 const {saveToCache} = require("./RedisBackend");
-const pg = new PostgresBackend();
-
+const dnbPg = new PostgresBackend('dnb');
+const celcomPg = new PostgresBackend('celcom');
 
 const testQuery = async () => {
-    const pool = await pg.setupPool();
+    const pool = await dnbPg.setupPool();
     const result = await pool.query("SELECT * FROM dnb.public.sites_on_air ORDER BY random() LIMIT 10", []);
     return result.rows;
 };
 
 const getCellInfo = async (request, response) => {
     const {cellName} = request.query;
-    await pg.setupPool();
-    pg.pool.query("SELECT * FROM dnb.public.tblcellid WHERE \"Cellname\" = $1", [cellName], (error, results) => {
+    await dnbPg.setupPool();
+    dnbPg.pool.query("SELECT * FROM dnb.public.tblcellid WHERE \"Cellname\" = $1", [cellName], (error, results) => {
         if (error) {
             throw error
         }
@@ -28,7 +28,7 @@ const getCellInfo = async (request, response) => {
 
 const getCurrentNominal = async (dnbIndex) => {
     const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE dnb_index=$1";
-    const pool = await pg.setupPool();
+    const pool = await dnbPg.setupPool();
     const result = pool.query(sqlQuery, [dnbIndex]);
     return result.rows;
 };
@@ -60,7 +60,7 @@ const updateNominal = asyncHandler(async (request, response) => {
         userName
     ];
 
-    pg.query(sqlQuery, sqlParams, (error, results) => {
+    dnbPg.query(sqlQuery, sqlParams, (error, results) => {
         console.log('update executed');
         if (error) throw error;
         response.status(200).json({success: true});
@@ -96,8 +96,8 @@ const updateConfigs = asyncHandler(async (request, response) => {
         body['SectorId'],
         body['System'],
     ];
-    await pg.setupPool();
-    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
+    await dnbPg.setupPool();
+    dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
             throw error
         }
@@ -135,7 +135,7 @@ const dbFullViewData = async (request, response) => {
             sqlQuery = "SELECT 'NOTHING SELECTED' as info;"
             break;
     }
-    pg.query(sqlQuery, [], (error, results) => {
+    dnbPg.query(sqlQuery, [], (error, results) => {
         if (error) throw error;
         response.status(200).json(results);
     });
@@ -150,7 +150,7 @@ const getChangeLog = asyncHandler(async (request, response) => {
         sqlQuery = "SELECT * FROM logging.t_history_parsed WHERE table_name=$1";
     }
 
-    pg.query(sqlQuery, tableName === 'all' ? [] : [tableName], (error, results) => {
+    dnbPg.query(sqlQuery, tableName === 'all' ? [] : [tableName], (error, results) => {
         console.log(results);
         response.status(200).json(results);
     });
@@ -178,8 +178,8 @@ const addJob = async (request, response) => {
         jobInfo,
         'pending'
     ];
-    await pg.setupPool();
-    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
+    await dnbPg.setupPool();
+    dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
             throw error
         }
@@ -195,7 +195,7 @@ const getTabulatorConfig = async (request, response) => {
     const sqlParams = [
         userId, key
     ];
-    pg.query(sqlQuery, sqlParams, (error, results) => {
+    dnbPg.query(sqlQuery, sqlParams, (error, results) => {
         if (error) throw error;
         response.status(200).json(results);
     });
@@ -211,8 +211,8 @@ const saveTabulatorConfig = async (request, response) => {
     const sqlParams = [
         userId, key, value
     ];
-    await pg.setupPool();
-    pg.pool.query(sqlQuery, sqlParams, (error, results) => {
+    await dnbPg.setupPool();
+    dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
             throw error
         }
@@ -234,7 +234,7 @@ const getGeoJSON = async (request, response) => {
         "WHERE \"Region\" = 'CENTRAL'";
 }
 
-const getTabulatorData = async (request, response, next) => {
+const getTabulatorData = (operator='dnb') => async (request, response, next) => {
 
     const {page, size, schema, boolOperand, table, filters, sorters} = request.query;
     const offset = size * (page - 1);
@@ -284,6 +284,7 @@ const getTabulatorData = async (request, response, next) => {
 
     try {
 
+        const pg = operator=== 'dnb'? dnbPg: celcomPg;
         const pool = await pg.setupPool();
         const result = await pool.query(sql, [...filterValues, size, offset]);
         const countResult = await pool.query(sqlCount, filterValues);

@@ -11,6 +11,7 @@ const {excelTestFunc} = require("../db/celcom/statsQueries");
 const {cache12h, cache} = require("../middleware/redisCache");
 const pgDbGeo = require("../db/pgQueriesGeo");
 const {getCells, getClusters} = require("../db/celcom/celcomGeoQueries");
+const {getReportsPendingHQReview} = require("../db/celcom/MySQLQueries");
 
 router.use(auth('celcom'));
 router.locals = {
@@ -40,17 +41,12 @@ createListener(client, 'new_data', async (data) => {
 
 });
 
-function handler(req, res) {
+router.get('/', function (req, res) {
     return res.send('Hello Celcom 321');
-}
-
-function handler2(req, res) {
+});
+router.get('/2', function (req, res) {
     return res.send('Hello Core2');
-}
-
-
-router.get('/', handler);
-router.get('/2', handler2);
+});
 
 router.get('/lte-stats/aggregate', asyncHandler(statsQueries.getAggregatedStats('LTE')));
 router.get('/lte-stats/aggregateWeek', asyncHandler(statsQueries.getAggregatedStatsWeek('LTE')));
@@ -65,8 +61,12 @@ router.get('/gsm-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('G
 router.get('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM')));
 router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('ALL')));
 
-router.get('/googleMap', cache('2 minutes'), gMap())
 
+router.get('/gsm-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('GSM')));
+router.get('/lte-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('LTE')));
+
+
+router.get('/googleMap', cache('2 minutes'), gMap())
 router.post('/testExcel', asyncHandler(excelTestFunc));
 
 router.get(
@@ -79,5 +79,7 @@ router.get(
     '/geojson',
     cache12h,
     asyncHandler(getCells));
+
+router.get('/ssoReportsPendingHQReview', asyncHandler(getReportsPendingHQReview));
 
 module.exports = router;

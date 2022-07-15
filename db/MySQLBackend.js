@@ -15,6 +15,11 @@ class MySQLBackend {
                 password = process.env.DB_PASS_CM;
                 db = 'eproject_cm';
                 break;
+            case 'celcom_test':
+                user = process.env.DB_USER_CM;
+                password = process.env.DB_PASS_CM;
+                db = 'eproject_cm_sb';
+                break;
             case 'dnb':
                 user = process.env.DB_USER_DNB;
                 password = process.env.DB_PASS_DNB;
