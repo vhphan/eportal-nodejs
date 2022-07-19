@@ -11,7 +11,7 @@ const {excelTestFunc} = require("../db/celcom/statsQueries");
 const {cache12h, cache} = require("../middleware/redisCache");
 const pgDbGeo = require("../db/pgQueriesGeo");
 const {getCells, getClusters} = require("../db/celcom/celcomGeoQueries");
-const {getReportsPendingHQReview} = require("../db/celcom/MySQLQueries");
+const {getReportsPendingHQReview, reviewReport, getReportsBulkApproved} = require("../db/celcom/MySQLQueries");
 
 router.use(auth('celcom'));
 router.locals = {
@@ -81,5 +81,12 @@ router.get(
     asyncHandler(getCells));
 
 router.get('/ssoReportsPendingHQReview', asyncHandler(getReportsPendingHQReview));
+
+router.put('/ssoReportsPendingHQReview/:reportId', asyncHandler(reviewReport('single')));
+
+router.get('/ssoReportsBulkApproved', asyncHandler(getReportsBulkApproved));
+
+router.put('/ssoReportsBulkApproved', asyncHandler(reviewReport('multiple')));
+
 
 module.exports = router;

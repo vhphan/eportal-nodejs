@@ -24,7 +24,12 @@ const checkApi = async (apiKey, operator) => {
             sqlQuery = "SELECT * FROM eproject_cm.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
             break;
     }
-    numRows = await mySQLBackend.numRows(sqlQuery, [apiKey]);
+    const [rows, fields] = await mySQLBackend.query(sqlQuery, [apiKey]);
+    const user = rows[0];
+    if (user) {
+        saveToCacheKeyValue(`${apiKey}-${operator}-user`, user).then(() => logger.info(`saved user ${user.Name} response to redis operator=${operator}`));
+    }
+    numRows = rows.length;
     saveToCacheKeyValue(`${apiKey}-${operator}`, numRows).then(() => logger.info('saved apiKey response to redis'));
     return !!numRows;
 };

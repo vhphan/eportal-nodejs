@@ -821,7 +821,6 @@ ORDER BY t1.time
 
     
     `,
-
 }
 
 module.exports = statsSqlQueries

@@ -204,6 +204,28 @@ let geoServerProxy = createProxyMiddleware({
 
 router.all('/geoserver/*', geoServerProxy);
 
+// let panelProxy = createProxyMiddleware({
+//     changeOrigin: true,
+//     prependPath: false,
+//     target: "http://localhost:5006",
+//     logLevel: 'debug',
+//     pathRewrite: {
+//         '^/node/dnb/panel': '', // remove base path
+//     },
+// });
+// let panelProxyWebSocket = createProxyMiddleware({
+//     changeOrigin: true,
+//     prependPath: false,
+//     target: "http://localhost:5006",
+//     logLevel: 'debug',
+//     ws: true,
+//     pathRewrite: {
+//         '^/node/dnb/panel': '', // remove base path
+//     },
+// });
+// router.all('/panel/*', panelProxy);
+// router.all('/panel/04_panel/ws', panelProxyWebSocket);
+
 router.get('/testQueryPGJS', pgJs.testQuery);
 
 router.get('/nbrRelation', pgJs.getNbrRelation);

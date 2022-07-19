@@ -51,6 +51,7 @@ const saveToCacheKeyValue = async (key, value) => {
 
 const getCacheKeyValue = async (key) => {
     await redisConnect();
+    logger.info(`getting data from cache for ${key}!`)
     const text = await client.get(key);
     if (text !== null) {
         return JSON.parse(text);
