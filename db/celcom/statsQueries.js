@@ -1,8 +1,6 @@
 const sql = require('./PgJsBackend');
-const {lteCounters, gsmKpis, lteKpis} = require("./constants");
 const {arrayToCsv} = require("../../routes/utils");
-const {renameProp, renameProps} = require("../../tools/utils");
-
+const {renameProps} = require("../../tools/utils");
 
 const getAggregatedStats = (tech) => async (request, response) => {
 
@@ -761,7 +759,7 @@ const getClusterStats = (tech) => async (request, response) => {
     `;
     results.forEach(d => {
         d['Date'] = d['Date'].toISOString().split('T')[0];
-        d[layerColumn] = d[layerColumn] === null? 'All' : d[layerColumn];
+        d[layerColumn] = d[layerColumn] === null ? 'All' : d[layerColumn];
     });
     response.status(200).json({
         success: true,
@@ -1304,7 +1302,6 @@ async function excelTestFunc(request, response) {
         }
     );
 }
-
 
 module.exports = {
     getAggregatedStats,

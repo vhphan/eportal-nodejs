@@ -7,6 +7,7 @@ const general = require('./routes/general');
 const celcom = require('./routes/celcom');
 const dnb = require('./routes/dnb');
 const dnb2 = require('./routes/dnb2');
+const dnb3 = require('./routes/dnb_stats_v3/dnb3');
 const tts = require('./tts/tts');
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
@@ -32,6 +33,7 @@ app.use('/node/general', general);
 app.use('/node/celcom', celcom);
 app.use('/node/dnb', dnb);
 app.use('/node/dnb', dnb2);
+app.use('/node/dnb/v3', dnb3);
 app.use('/node/tts', tts);
 app.use(errorHandler);
 
