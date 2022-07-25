@@ -48,7 +48,7 @@ const getAggregatedStats = (tech) => async (request, response) => {
     AND "Date" <= ${endDate}
     ORDER BY "Date", "id"
     LIMIT ${size} OFFSET ${(page - 1) * size}
-    `
+    `;
 
     const {headers, values} = arrayToCsv(results);
 

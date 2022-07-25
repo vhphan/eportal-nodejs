@@ -35,4 +35,12 @@ router.get(
     asyncHandler(cellDailyStatsLTE)
 );
 
+
+router.get(
+    '/networkDailyNR',
+    cache15m,
+    asyncHandler(networkDailyStatsNR)
+);
+
+
 module.exports = router;
