@@ -1018,26 +1018,26 @@ const customCellListStatsLTE = async (request, response) => {
                     (pmflexerabestabattinit_endc2to99 + pmflexerabestabattadded_endc2to99) AS "Call Setup Success Rate",
 
                100 * (pmflexerabestabsuccinit_endc2to99 + pmflexerabestabsuccadded_endc2to99) ||
-                     (pmflexerabestabattinit_endc2to99 + pmflexerabestabattadded_endc2to99)                        AS "E-RAB Setup Success Rate_non-GBR (%)",
+                     (pmflexerabestabattinit_endc2to99 + pmflexerabestabattadded_endc2to99)    AS "E-RAB Setup Success Rate_non-GBR (%)",
 
                100 * (pmrrcconnestabsucc || (pmrrcconnestabatt - pmrrcconnestabattreatt - pmrrcconnestabfailmmeovlmos -
-                                             pmrrcconnestabfailmmeovlmod))                                         AS "RRC Setup Success Rate (Service) (%)",
+                                             pmrrcconnestabfailmmeovlmod))                     AS "RRC Setup Success Rate (Service) (%)",
                100 * pmrrcconnestabsuccmos ||
-                     (pmrrcconnestabattmos - pmrrcconnestabattreattmos)                                            AS "RRC Setup Success Rate (Signaling) (%)",
+                     (pmrrcconnestabattmos - pmrrcconnestabattreattmos)                        AS "RRC Setup Success Rate (Signaling) (%)",
                100 * (pmerabestabsuccinit + pmerabestabsuccadded) ||
-                     (pmerabestabattinit + pmerabestabattadded - pmerabestabattaddedhoongoing)                     AS "E-RAB Setup Success Rate (%)",
+                     (pmerabestabattinit + pmerabestabattadded - pmerabestabattaddedhoongoing) AS "E-RAB Setup Success Rate (%)",
                100 * (pmerabrelabnormalenbact + pmerabrelabnormalmmeact) ||
-                     (pmerabrelabnormalenb + pmerabrelnormalenb + pmerabrelmme)                                    AS "Erab Drop Call rate",
+                     (pmerabrelabnormalenb + pmerabrelnormalenb + pmerabrelmme)                AS "Erab Drop Call rate",
                100 * (pmuectxtfetchsuccx2hoin + pmuectxtfetchsuccintraenbhoin) ||
-                     (pmuectxtfetchattx2hoin + pmuectxtfetchattintraenbhoin)                                       AS "Handover In Success Rate",
+                     (pmuectxtfetchattx2hoin + pmuectxtfetchattintraenbhoin)                   AS "Handover In Success Rate",
                100 * ((pmmacharqulfailqpsk + pmmacharqulfail16qam + pmmacharqulfail64qam + pmmacharqulfail256qam) ||
                       (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam + pmmacharqulsucc256qam +
                        pmmacharqulfailqpsk + pmmacharqulfail16qam + pmmacharqulfail64qam +
-                       pmmacharqulfail256qam))                                                                     AS "UL BLER",
-               (pmpdcpvoldldrb - pmpdcpvoldldrblasttti) || pmuethptimedl                                           AS "DL User Throughput",
-               pmuethpvolul || pmuethptimeul                                                                       AS "UL User Throughput",
-               pmpdcpvoldldrb || pmschedactivitycelldl                                                             AS "DL Cell Throughput",
-               pmpdcpvoluldrb || pmschedactivitycellul                                                             AS "UL Cell Throughput",
+                       pmmacharqulfail256qam))                                                 AS "UL BLER",
+               (pmpdcpvoldldrb - pmpdcpvoldldrblasttti) || pmuethptimedl                       AS "DL User Throughput",
+               pmuethpvolul || pmuethptimeul                                                   AS "UL User Throughput",
+               pmpdcpvoldldrb || pmschedactivitycelldl                                         AS "DL Cell Throughput",
+               pmpdcpvoluldrb || pmschedactivitycellul                                         AS "UL Cell Throughput",
                pmpdcpvoldldrb || (8 * 1024) ::double precision                                                      AS "DL Data Volume",
        pmpdcpvoluldrb || (8 * 1024)::double precision                                                      AS "UL Data Volume",
        pmrrcconnmax                                                                                        AS "Max of RRC Connected User",
@@ -1142,22 +1142,13 @@ const customCellListStatsLTE = async (request, response) => {
 
 const networkDailyPlmnStatsNR = async (request, response) => {
     const results = await sql`
-        SELECT tt1.date_id as time,
+        SELECT tt1.date_id::varchar(10) as time,
                        tt1.mobile_operator as object,
-                       tt1.flex_filtername,
-                       tt2.flex_filtername, ${sql(plmnKpiList.NR)}
-        FROM (SELECT t1.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcellcu_flex_plmn_kpi as t1
-            INNER JOIN stats_v3.flex_filters as ff
-            on t1.flex_filtername = ff.flex_filtername_nrcellcu
-            WHERE t1."Region" = 'All') as tt1
-            INNER JOIN (SELECT t2.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcelldu_flex_plmn_kpi as t2
-            INNER JOIN stats_v3.flex_filters as ff
-            on t2.flex_filtername = ff.flex_filtername_nrcelldu
-            WHERE t2."Region" = 'All') as tt2
-            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
-
+                       ${sql(plmnKpiList.NR)}
+        FROM 
+        dnb.stats_v3.nrcellcu_flex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3.nrcelldu_flex_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
         WHERE tt1."Region" = 'All'
         ORDER BY time, tt1.id;
     `;
@@ -1170,17 +1161,9 @@ const regionDailyPlmnStatsNR = async (request, response) => {
                        tt1.mobile_operator as object,
                        tt1.flex_filtername,
                        tt2.flex_filtername, ${sql(plmnKpiList.NR)}
-        FROM (SELECT t1.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcellcu_flex_plmn_kpi as t1
-            INNER JOIN stats_v3.flex_filters as ff
-            on t1.flex_filtername = ff.flex_filtername_nrcellcu
-            WHERE t1."Region" = 'All') as tt1
-            INNER JOIN (SELECT t2.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcelldu_flex_plmn_kpi as t2
-            INNER JOIN stats_v3.flex_filters as ff
-            on t2.flex_filtername = ff.flex_filtername_nrcelldu
-            WHERE t2."Region" = 'All') as tt2
-            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+        FROM dnb.stats_v3.nrcellcu_flex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3.nrcelldu_flex_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
         WHERE tt1."Region" <> 'All'
           and tt1."MCMC_State" = 'All'
           and tt1."DISTRICT" = 'All'
@@ -1197,17 +1180,9 @@ const clusterDailyPlmnStatsNR = async (request, response) => {
                        tt1.mobile_operator as object,
                        tt1.flex_filtername,
                        tt2.flex_filtername, ${sql(plmnKpiList.NR)}
-        FROM (SELECT t1.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcellcu_flex_plmn_kpi as t1
-            INNER JOIN stats_v3.flex_filters as ff
-            on t1.flex_filtername = ff.flex_filtername_nrcellcu
-            WHERE t1."Region" = 'All') as tt1
-            INNER JOIN (SELECT t2.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_agg_nrcelldu_flex_plmn_kpi as t2
-            INNER JOIN stats_v3.flex_filters as ff
-            on t2.flex_filtername = ff.flex_filtername_nrcelldu
-            WHERE t2."Region" = 'All') as tt2
-            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+        FROM dnb.stats_v3.nrcellcu_flex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3.nrcelldu_flex_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
         WHERE tt1."Cluster_ID" <> 'All'
           AND tt1."Cluster_ID" LIKE ${clusterId}
         ORDER BY tt1."Cluster_ID", tt1.date_id;
@@ -1226,31 +1201,23 @@ const cellDailyPlmnStatsNR = async (request, response) => {
         return;
     }
     const results = await sql`
-        SELECT tt1.date_id as time,
-   tt1.mobile_operator as object,
-   tt1.flex_filtername,
-   tt2.flex_filtername, ${sql(plmnKpiList.NR)}
-        FROM (SELECT t1.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_cell_nrcellcu_flex_plmn_kpi as t1
-            INNER JOIN stats_v3.flex_filters as ff
-            on t1.flex_filtername = ff.flex_filtername_nrcellcu
-            WHERE t1.nrcellcu = ${sql(cellId)}) as tt1
-            INNER JOIN (SELECT t2.*, ff.mobile_operator
-            from dnb.stats_v3.tbl_cell_nrcelldu_flex_plmn_kpi as t2
-            INNER JOIN stats_v3.flex_filters as ff
-            on t2.flex_filtername = ff.flex_filtername_nrcelldu
-            WHERE t2.nrcelldu = ${sql(cellId)}) as tt2
-        on tt1.nrcellcu = tt2.nrcelldu
-            and tt1.mobile_operator = tt2.mobile_operator
-            and tt1.date_id = tt2.date_id
-        ORDER BY time;
+    SELECT tt1.date_id::varchar(10) as time,
+       tt1.mobile_operator as object,
+       ${sql(plmnKpiList.NR)}
+       FROM dnb.stats_v3.tbl_cell_nrcellcu_flex_plmn_kpi as tt1
+       LEFT JOIN dnb.stats_v3.tbl_cell_nrcelldu_flex_plmn_kpi as tt2
+         on tt1.date_id = tt2.date_id
+       and tt1.mobile_operator = tt2.mobile_operator
+       and tt1.nrcellcu = tt2.nrcelldu
+       WHERE tt1.nrcellcu = ${cellId}
+            ORDER BY time;
     `;
     return sendResults(request, response, results);
 }
 
 const networkDailyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
-        SELECT tt1.date_id as time,
+        SELECT tt1.date_id::varchar(10) as time,
        tt1.mobile_operator as object,
        tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
@@ -1264,7 +1231,7 @@ const networkDailyPlmnStatsLTE = async (request, response) => {
 
 const regionDailyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
-        SELECT tt1.date_id as time,
+        SELECT tt1.date_id::varchar(10) as time,
        tt1.mobile_operator as object,
        tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
@@ -1280,7 +1247,7 @@ const regionDailyPlmnStatsLTE = async (request, response) => {
 const clusterDailyPlmnStatsLTE = async (request, response) => {
     const clusterId = request.query.clusterId || request.params.clusterId || '%';
     const results = await sql`
-        SELECT tt1.date_id as time,
+        SELECT tt1.date_id::varchar(10) as time,
        tt1.mobile_operator as object,
        ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
@@ -1308,7 +1275,7 @@ const cellDailyPlmnStatsLTE = async (request, response) => {
         WHERE tt1.eutrancellfdd = ${cellId}
         ORDER BY time;
     `;
-    return sendResults(request, response, results);
+    return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
 
 
 }

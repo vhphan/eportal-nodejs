@@ -87,7 +87,7 @@ router.get('/checkUser', async (req, res) => {
 })
 
 router.get(
-    '/networkDailyPlmnNR',
+    ['/networkDailyPlmnNR', '/plmnDailyNR'],
     cache2h,
     asyncHandler(networkDailyPlmnStatsNR)
 );
@@ -105,13 +105,13 @@ router.get(
 );
 
 router.get(
-    ['/cellDailyPlmnNR', 'plmnDailyCellNR'],
+    ['/cellDailyPlmnNR', '/plmnDailyCellNR'],
     cache2h,
     asyncHandler(cellDailyPlmnStatsNR)
 );
 
 router.get(
-    '/networkDailyPlmnLTE',
+    ['/networkDailyPlmnLTE', '/plmnDailyLTE'],
     cache2h,
     asyncHandler(networkDailyPlmnStatsLTE)
 );
@@ -129,7 +129,7 @@ router.get(
 );
 
 router.get(
-    '/cellDailyPlmnLTE',
+    ['/cellDailyPlmnLTE', '/plmnDailyCellLTE'],
     cache2h,
     asyncHandler(cellDailyPlmnStatsLTE)
 );

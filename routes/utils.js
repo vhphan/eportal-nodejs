@@ -18,6 +18,9 @@ const arrayToCsv = (results, parseDate = true, dateColumns = 'Date', replaceNull
     if (parseDate && Array.isArray(dateColumns)) {
         dateColumns.forEach(dateColumn => {
             results.forEach(d => {
+                if (d[dateColumn] === null) {
+                    return null;
+                }
                 d[dateColumn] = d[dateColumn].toISOString().split('T')[0]
             })
         });

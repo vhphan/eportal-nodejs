@@ -35,6 +35,13 @@ Accept: application/json
 Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
+GET http://localhost:3001/node/dnb/v3/cellDailyLTE?cellId=DBGBK0173_L7_0010
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+
+###
 GET http://localhost:3001/node/dnb/v3/cellDailyNR?cellId=DBPET1129_N3_0320
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
@@ -187,6 +194,28 @@ Accept: application/json
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyPlmnLTE?cellId=DWKUL0489_L7_0030
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+
+###
+GET http://localhost:3001/node/dnb/v3/plmnDailyCellLTE?object=DBGBK0002_L7_0020
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+###
+GET http://localhost:3001/node/dnb/v3/plmnDailyNR
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+###
+GET http://localhost:3001/node/dnb/v3/plmnDailyCellNR?object=DBGBK1875_N3_0320
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
