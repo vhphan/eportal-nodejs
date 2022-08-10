@@ -48,11 +48,8 @@ const getQueryAsJson = function (sql, params = []) {
 
 const getCellQuery = function (sql, wildCard = false) {
     return async (request, response) => {
-
         const {object} = request.query;
-
         const params = object ? (wildCard ? [`%${object}%`] : [`${object}`]) : ['%'];
-
         const pool = await pg.setupPool();
         const result = await pool.query(sql, params);
         response.status(200).json(roundJsonValues(result.rows));

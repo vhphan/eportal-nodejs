@@ -1,20 +1,29 @@
 const fs = require("fs");
+const {logger} = require("../middleware/logger");
 
-function createWatcherProcess() {
-    const spawn = require('child_process').spawn;
-    const watcher = spawn('node', ['./tools/celcomEdbWatcher.js']);
-
+function logWatcher(watcher) {
     watcher.stdout.on('data', function (data) {
-        console.log("stdout: " + data);
+        logger.info("stdout: " + data);
     });
 
     watcher.stderr.on('data', function (data) {
-        console.log("stderr: " + data);
+        logger.info("stderr: " + data);
     });
 
     watcher.on('close', function (code) {
-        console.log("child process exited with code " + code);
+        logger.info("child process exited with code " + code);
     });
+}
+
+function createWatcherProcess() {
+    logger.info("start watching");
+    const spawn = require('child_process').spawn;
+
+    const watcher1 = spawn('node', ['./tools/celcomEdbWatcher.js']);
+    logWatcher(watcher1);
+
+    const watcher2 = spawn('node', ['./tools/dnb/netanDataDnbWatcher.js']);
+    logWatcher(watcher2);
 }
 
 const renameProp = (
@@ -35,9 +44,16 @@ function renameProps(obj, oldProps, newProps) {
     }, {});
 }
 
+const unless = function(middleware, ...paths) {
+  return function(req, res, next) {
+    const pathCheck = paths.some(path => path === req.path);
+    pathCheck ? next() : middleware(req, res, next);
+  };
+};
+
 module.exports = {
     createWatcherProcess,
     renameProp,
-    renameProps
-
+    renameProps,
+    unless
 }

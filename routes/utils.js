@@ -2,15 +2,33 @@ const needle = require("needle");
 
 const gMapUrl = `https://maps.googleapis.com/maps/api/js`
 
-const arrayToCsv = (results, parseDate = true) => {
+const arrayToCsv = (results, parseDate = true, dateColumns = 'Date', replaceNull = null) => {
     if (results.length === 0) {
         return {headers: [], values: []};
     }
     // const headers = results.columns.map(col => col.name);
     const headers = Object.keys(results[0]);
-    if (parseDate) {
+
+    if (parseDate && typeof dateColumns === 'string') {
         results.forEach(d => {
-            d['Date'] = d['Date'].toISOString().split('T')[0]
+            d[dateColumns] = d[dateColumns].toISOString().split('T')[0]
+        })
+    }
+
+    if (parseDate && Array.isArray(dateColumns)) {
+        dateColumns.forEach(dateColumn => {
+            results.forEach(d => {
+                d[dateColumn] = d[dateColumn].toISOString().split('T')[0]
+            })
+        });
+    }
+    if (replaceNull) {
+        results.forEach(d => {
+            Object.keys(d).forEach(key => {
+                if (d[key] === null) {
+                    d[key] = replaceNull
+                }
+            })
         })
     }
     const values = results.map(d => Object.values(d).join('\t'));

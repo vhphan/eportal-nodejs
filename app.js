@@ -22,6 +22,7 @@ const {createProxyMiddleware} = require("http-proxy-middleware");
 const result = require('dotenv').config({path: './.env'})
 const {createWatcherProcess} = require("./tools/utils");
 
+logger.info('Starting app.js...');
 if (result.error) {
     throw result.error
 }

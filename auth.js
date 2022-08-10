@@ -1,21 +1,16 @@
 const MySQLBackend = require("./db/MySQLBackend");
 const {getCookies} = require("./db/utils");
-const {saveToCache, saveToCacheKeyValue, getCacheKeyValue} = require("./db/RedisBackend");
+const {saveToCacheKeyValue, getCacheKeyValue} = require("./db/RedisBackend");
 const {logger} = require("./middleware/logger");
-const mySQLBackend = require("./db/MySQLBackend");
 
-const checkApi = async (apiKey, operator) => {
-    let mySQLBackend;
-    let sqlQuery;
-    mySQLBackend = new MySQLBackend(operator);
-    let numRows;
-
-    numRows = await getCacheKeyValue(`${apiKey}-${operator}`)
-    if (numRows) {
-        logger.info('got the apiKey response from redis')
-        return !!numRows;
+async function getUser(operator, apiKey) {
+    let user = await getCacheKeyValue(`${apiKey}-${operator}-user`)
+    if (user) {
+        logger.info('got the user response from redis')
+        return user;
     }
-
+    const mySQLBackend = new MySQLBackend(operator);
+    let sqlQuery;
     switch (operator) {
         case 'dnb':
             sqlQuery = "SELECT * FROM eproject_dnb.tbluser WHERE API_token = ? ORDER BY UserID DESC LIMIT 1";
@@ -25,13 +20,19 @@ const checkApi = async (apiKey, operator) => {
             break;
     }
     const [rows, fields] = await mySQLBackend.query(sqlQuery, [apiKey]);
-    const user = rows[0];
+    user = rows[0];
     if (user) {
         saveToCacheKeyValue(`${apiKey}-${operator}-user`, user).then(() => logger.info(`saved user ${user.Name} response to redis operator=${operator}`));
     }
-    numRows = rows.length;
-    saveToCacheKeyValue(`${apiKey}-${operator}`, numRows).then(() => logger.info('saved apiKey response to redis'));
-    return !!numRows;
+    return user;
+}
+
+const checkApi = async (apiKey, operator) => {
+    console.log(process.env.NODE_ENV);
+    logger.info(`checking api key ${apiKey}`)
+    console.log(`i am checking api key ${apiKey}`)
+    const user = await getUser(operator, apiKey);
+    return !!user;
 };
 
 const checkUserPassword = async (username, password, operator) => {
@@ -56,6 +57,41 @@ const checkUserPassword = async (username, password, operator) => {
     saveToCacheKeyValue(`${username}-${password}-${operator}`, numRows).then(() => logger.info('saved user/pw response to redis'));
     return !!numRows;
 };
+
+const getApiKeyUsingPassword = (operator) => async (req, res) => {
+    const {userName, password} = req.query;
+
+    if (!userName || !password) {
+        return res.status(401).json({
+            success: false,
+            error: 'Username or password is missing!'
+        });
+    }
+
+    const mySQLBackend = new MySQLBackend(operator);
+    let sqlQuery;
+    switch (operator) {
+        case 'dnb':
+            sqlQuery = "SELECT * FROM eproject_dnb.tbluser WHERE Username = ? AND Password = ? ORDER BY UserID DESC LIMIT 1";
+            break;
+        case 'celcom':
+            sqlQuery = "SELECT * FROM eproject_cm.tbluser WHERE Username = ? AND Password = ? ORDER BY UserID DESC LIMIT 1";
+            break;
+    }
+    const [rows, fields] = await mySQLBackend.query(sqlQuery, [userName, password]);
+    const user = rows[0];
+    if (user) {
+        return res.json({
+            success: true,
+            apiKey: user.API_token
+        });
+    }
+    return res.status(401).json({
+        success: false,
+        error: 'Login Failed!'
+    });
+
+}
 
 async function checkBasicAuthHeader(operator, req, next, res) {
     try {
@@ -110,4 +146,4 @@ const auth = (operator) => {
     };
 }
 
-module.exports = {auth, basicAuth};
+module.exports = {auth, basicAuth, getUser,getApiKeyUsingPassword};

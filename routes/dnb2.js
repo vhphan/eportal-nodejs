@@ -10,7 +10,6 @@ const asyncHandler = require("../middleware/async");
 const sql = require("../db/pgjs/PgJsBackend");
 const pgDbGeo = require("../db/pgQueriesGeo");
 
-router.use(auth('dnb'))
 router.get('/', testQuery)
 router.get('/clusterStatsNR', asyncHandler(clusterDailyStatsNR))
 router.get('/clusterStatsLTE', asyncHandler(clusterDailyStatsLTE))

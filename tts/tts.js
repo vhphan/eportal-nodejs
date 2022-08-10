@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const ttsQueries = require('../db/pgjs/ttsQueries');
 const asyncHandler = require("../middleware/async");
 const {auth} = require("./auth");
+const {unless} = require("../tools/utils");
 
 router.use(cookieParser());
 router.use(session({
@@ -13,12 +14,7 @@ router.use(session({
     saveUninitialized: true,
     resave: true }));
 
-const unless = function(middleware, ...paths) {
-  return function(req, res, next) {
-    const pathCheck = paths.some(path => path === req.path);
-    pathCheck ? next() : middleware(req, res, next);
-  };
-};
+
 
 router.use(unless(auth, "/user", "/login"));
 

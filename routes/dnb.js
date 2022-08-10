@@ -10,14 +10,16 @@ const apiCache = require('apicache')
 let cache = apiCache.middleware
 const asyncHandler = require("../middleware/async");
 const download = require("../tools/chartDl");
-const {auth} = require("../auth");
+const {auth, getApiKeyUsingPassword} = require("../auth");
 const {createProxyMiddleware} = require("http-proxy-middleware");
 const {cache15m, cache30m, cacheLongTerm, cache12h} = require("../middleware/redisCache");
 const needle = require("needle");
 const {gMap} = require("./utils");
+const {unless} = require("../tools/utils");
 
+router.use(unless(auth('dnb'), "/getApiKey"));
 
-router.use(auth('dnb'))
+// router.use(auth('dnb'))
 
 // router.use(compression);
 
@@ -38,7 +40,7 @@ router.route('/tabulatorConfig')
     .post(pgDb.saveTabulatorConfig);
 
 router.get('/tabulatorData', cache15m,
-    asyncHandler(pgDb.getTabulatorData));
+    asyncHandler(pgDb.getTabulatorData('dnb')));
 
 // router.route('testtest')
 //     .get(getHandler)
@@ -178,31 +180,30 @@ router.get(
     cache12h,
     asyncHandler(pgDbGeo.getCells));
 
-let postgrestProxy = createProxyMiddleware({
-    changeOrigin: true,
-    prependPath: false,
-    target: "http://localhost:3000",
-    logLevel: 'debug',
-    pathRewrite: {
-        '^/node/dnb/pgr': '', // remove base path
-    },
-});
-router.all('/pgr/*', postgrestProxy);
+// let postgrestProxy = createProxyMiddleware({
+//     changeOrigin: true,
+//     prependPath: false,
+//     target: "http://localhost:3000",
+//     logLevel: 'debug',
+//     pathRewrite: {
+//         '^/node/dnb/pgr': '', // remove base path
+//     },
+// });
+// router.all('/pgr/*', postgrestProxy);
 
 
-router.get('/googleMap', cache('2 minutes'), gMap())
 
-let geoServerProxy = createProxyMiddleware({
-    changeOrigin: true,
-    prependPath: false,
-    target: "http://localhost:8080",
-    logLevel: 'debug',
-    pathRewrite: {
-        '^/node/dnb/geoserver': '', // remove base path
-    },
-});
-
-router.all('/geoserver/*', geoServerProxy);
+// let geoServerProxy = createProxyMiddleware({
+//     changeOrigin: true,
+//     prependPath: false,
+//     target: "http://localhost:8080",
+//     logLevel: 'debug',
+//     pathRewrite: {
+//         '^/node/dnb/geoserver': '', // remove base path
+//     },
+// });
+//
+// router.all('/geoserver/*', geoServerProxy);
 
 // let panelProxy = createProxyMiddleware({
 //     changeOrigin: true,
@@ -226,6 +227,8 @@ router.all('/geoserver/*', geoServerProxy);
 // router.all('/panel/*', panelProxy);
 // router.all('/panel/04_panel/ws', panelProxyWebSocket);
 
+router.get('/googleMap', cache('2 minutes'), gMap())
+
 router.get('/testQueryPGJS', pgJs.testQuery);
 
 router.get('/nbrRelation', pgJs.getNbrRelation);
@@ -235,5 +238,8 @@ router.get('/checkUser', async (req, res) => {
         success: true,
     });
 })
+
+router.get('/getApiKey', asyncHandler(getApiKeyUsingPassword('dnb')))
+
 
 module.exports = router;

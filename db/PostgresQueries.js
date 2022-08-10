@@ -235,7 +235,6 @@ const getGeoJSON = async (request, response) => {
 }
 
 const getTabulatorData = (operator='dnb') => async (request, response, next) => {
-
     const {page, size, schema, boolOperand, table, filters, sorters} = request.query;
     const offset = size * (page - 1);
     let filterArray = [];
