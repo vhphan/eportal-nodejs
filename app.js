@@ -112,3 +112,8 @@ process.on('unhandledRejection', (err, promise) => {
 
 
 createWatcherProcess();
+
+if (process.platform === 'win32') {
+
+
+}

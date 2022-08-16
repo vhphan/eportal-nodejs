@@ -1,5 +1,5 @@
 const express = require('express');
-const {cache15m, cache12h, cache2h} = require("../../middleware/redisCache");
+const {cache12h, cache15m} = require("../../middleware/redisCache");
 const asyncHandler = require("../../middleware/async");
 
 const {
@@ -10,9 +10,10 @@ const {
     cellsListNR, cellsListLTE, customCellListStatsNR, customCellListStatsNR2, customCellListStatsLTE,
     networkDailyPlmnStatsNR, networkDailyPlmnStatsLTE, regionDailyPlmnStatsNR, clusterDailyPlmnStatsNR,
     cellDailyPlmnStatsNR, regionDailyPlmnStatsLTE, clusterDailyPlmnStatsLTE, cellDailyPlmnStatsLTE
-} = require("../../db/pgjs/PgJSQueriesStatsV3");
+} = require("../../db/pgjs/DailyQueriesStatsV3");
 
 const {logRequest} = require("../../middleware/logger");
+const {networkHourlyStatsNR, regionHourlyStatsNR, clusterHourlyStatsNR, cellHourlyStatsNR, networkHourlyStatsLTE} = require("../../db/pgjs/HourlyQueriesStatsV3");
 
 const router = express.Router();
 
@@ -20,50 +21,50 @@ router.use(logRequest);
 
 router.get(
     '/networkDailyLTE',
-    cache2h,
+    cache15m,
     asyncHandler(networkDailyStatsLTE)
 );
 
 router.get(
     '/regionDailyLTE',
-    cache2h,
+    cache15m,
     asyncHandler(regionDailyStatsLTE)
 );
 
 
 router.get(
     ['/clusterDailyLTE', '/clusterStatsLTE'],
-    cache2h,
+    cache15m,
     asyncHandler(clusterDailyStatsLTE)
 );
 
 router.get(
     ['/cellDailyLTE', '/networkDailyLTECell'], // networkDailyLTECell
-    cache2h,
+    cache15m,
     asyncHandler(cellDailyStatsLTE)
 );
 
 router.get(
     '/networkDailyNR',
-    cache2h,
+    cache15m,
     asyncHandler(networkDailyStatsNR)
 );
 
 router.get(
     '/regionDailyNR',
-    cache2h,
+    cache15m,
     asyncHandler(regionDailyStatsNR)
 );
 
 router.get(
     ['/clusterDailyNR', '/clusterStatsNR'],
-    cache2h,
+    cache15m,
     asyncHandler(clusterDailyStatsNR)
 );
 
 router.get(
     ['/cellDailyNR', '/networkDailyNRCell'],
-    cache2h,
+    cache15m,
     asyncHandler(cellDailyStatsNR)
 );
 
@@ -76,7 +77,7 @@ router.get('/statsForCustomCellsListLTE', asyncHandler(customCellListStatsLTE))
 
 router.get(
     ['/cellsList', 'cellsMapping'],
-    cache2h,
+    cache15m,
     asyncHandler(cellsList)
 );
 
@@ -88,50 +89,85 @@ router.get('/checkUser', async (req, res) => {
 
 router.get(
     ['/networkDailyPlmnNR', '/plmnDailyNR'],
-    cache2h,
+    cache15m,
     asyncHandler(networkDailyPlmnStatsNR)
 );
 
 router.get(
     '/regionDailyPlmnNR',
-    cache2h,
+    cache15m,
     asyncHandler(regionDailyPlmnStatsNR)
 );
 
 router.get(
     '/clusterDailyPlmnNR',
-    cache2h,
+    cache15m,
     asyncHandler(clusterDailyPlmnStatsNR)
 );
 
 router.get(
     ['/cellDailyPlmnNR', '/plmnDailyCellNR'],
-    cache2h,
+    cache15m,
     asyncHandler(cellDailyPlmnStatsNR)
 );
 
+// PLMN LTE
 router.get(
     ['/networkDailyPlmnLTE', '/plmnDailyLTE'],
-    cache2h,
+    cache15m,
     asyncHandler(networkDailyPlmnStatsLTE)
 );
 
 router.get(
     '/regionDailyPlmnLTE',
-    cache2h,
+    cache15m,
     asyncHandler(regionDailyPlmnStatsLTE)
 );
 
 router.get(
     '/clusterDailyPlmnLTE',
-    cache2h,
+    cache15m,
     asyncHandler(clusterDailyPlmnStatsLTE)
 );
 
 router.get(
     ['/cellDailyPlmnLTE', '/plmnDailyCellLTE'],
-    cache2h,
+    cache15m,
     asyncHandler(cellDailyPlmnStatsLTE)
 );
+
+//==========================================================================
+//HOURLY
+//==========================================================================
+router.get(
+    '/networkHourlyNR',
+    cache15m,
+    asyncHandler(networkHourlyStatsNR)
+);
+
+router.get(
+    '/regionHourlyNR',
+    cache15m,
+    asyncHandler(regionHourlyStatsNR)
+);
+
+router.get(
+    ['/clusterHourlyNR', '/clusterStatsHourlyNR'],
+    cache15m,
+    asyncHandler(clusterHourlyStatsNR)
+);
+
+router.get(
+    ['/cellHourlyNR', '/networkHourlyNRCell'],
+    cache15m,
+    asyncHandler(cellHourlyStatsNR)
+);
+
+router.get(
+    '/networkHourlyLTE',
+    cache15m,
+    asyncHandler(networkHourlyStatsLTE)
+);
+
 
 module.exports = router;

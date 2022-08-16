@@ -8,7 +8,7 @@ Accept: application/json
 ###
 GET https://ndo-portal.eprojecttrackers.com/main.php?action=tabulatorPG&table=tblcellid2&view=1&boolOperand=AND&schema=rfdb&page=1&size=100
 X-Requested-With: XMLHttpRequest
-API: "df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b8834"
+API: {{apiKey}}
 Accept: application/json
 
 
@@ -18,63 +18,63 @@ GET http://localhost:3001/node/dnb/cellInfo?cellName={{cellName}}
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyLTE?cellId=DBGBK0173_L7_0010
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyLTE?cellId=DBGBK0173_L7_0010&format=csv
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyLTE?cellId=DBGBK0173_L7_0010
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyNR?cellId=DBPET1129_N3_0320
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellDailyNR?cellId=DBPET1129_N3_0320&format=csv
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/text
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/cellsList?format=csv
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/text
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/v3/networkDailyLTE?format=csv
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/text
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 ###
 GET http://localhost:3001/node/dnb/
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/text
-Cookie: API=df5ce87320edfbe74fa933102673db30cfd1a1df39484a1a3dd5e1a6e88b3488; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
+Cookie: API={{apiKey}}; PHPSESSID=64e81b0a24936cebb7890c3a2b39eeb8; Username=phanveehuen; Name=Phan+Vee+Huen; UserType=Admin; UserID=774
 
 
 ###
@@ -219,4 +219,21 @@ GET http://localhost:3001/node/dnb/v3/plmnDailyCellNR?object=DBGBK1875_N3_0320
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
+
+
+###
+GET http://localhost:3001/node/dnb/v3/networkDailyLTE?version=1.3
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+
+Accept: application/json
+
+
+
+###
+GET http://localhost:3001/node/dnb/v3/networkDailyNRCell?object=DBGBK1875_N3_0330&version=1.2
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
 

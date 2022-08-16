@@ -27,7 +27,7 @@ createListener(client, 'new_data', async (data) => {
     if (['gsm_aggregates_week_columns', 'lte_aggregates_week_columns'].includes(updatedTable)) {
         const tech = updatedTable.substring(0, 4);
         const message = `Aggregation completed for ${tech}`;
-        sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', `Auto Messaging: Aggregation completed [${tech}]`, message);
+        sendEmail(process.env.CELCOM_EMAILS, `Auto Messaging: Aggregation completed [${tech}]`, message);
         return;
     }
 
@@ -36,7 +36,7 @@ createListener(client, 'new_data', async (data) => {
         return;
     }
     7
-    sendEmail('beng.tat.lim@ericsson.com, louis.lee.shao.jun@ericsson.com, vee.huen.phan@ericsson.com', 'Auto Messaging: New Data Processed', message);
+    sendEmail(process.env.CELCOM_EMAILS, 'Auto Messaging: New Data Processed', message);
     router.locals.lastEmailSentAt[updatedTable] = new Date();
 
 });

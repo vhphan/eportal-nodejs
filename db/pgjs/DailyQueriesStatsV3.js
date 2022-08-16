@@ -1310,5 +1310,6 @@ module.exports = {
     clusterDailyPlmnStatsLTE,
     cellDailyPlmnStatsLTE,
 
+    sendResults
 
 }
