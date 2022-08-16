@@ -186,10 +186,6 @@ GET https://cmeportal.eprojecttrackers.com/ASPTracker.php?process=FRR&page=40&AP
 X-Requested-With: XMLHttpRequest
 Accept: application/json
 
-#API: ba2a6c83288d179f8fe474a20145487d4cdd4fb42a579bfb175b62f99f4e53f5
-#Cookie: API=ba2a6c83288d179f8fe474a20145487d4cdd4fb42a579bfb175b62f99f4e53f5;
-
-
 
 
 ###
