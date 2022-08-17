@@ -52,13 +52,15 @@ router.get('/lte-stats/aggregate', asyncHandler(statsQueries.getAggregatedStats(
 router.get('/lte-stats/aggregateWeek', asyncHandler(statsQueries.getAggregatedStatsWeek('LTE')));
 router.get('/lte-stats/cellStats', asyncHandler(statsQueries.getCellStats('LTE')));
 router.get('/lte-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('LTE')));
-router.get('/lte-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('LTE')));
+router.get('/lte-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('LTE', 'get')));
+router.post('/lte-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('LTE', 'post')));
 
 router.get('/gsm-stats/aggregate', asyncHandler(statsQueries.getAggregatedStats('GSM')));
 router.get('/gsm-stats/aggregateWeek', asyncHandler(statsQueries.getAggregatedStatsWeek('GSM')));
 router.get('/gsm-stats/cellStats', asyncHandler(statsQueries.getCellStats('GSM')));
 router.get('/gsm-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('GSM')));
-router.get('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM')));
+router.get('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM', 'get')));
+router.post('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGroupedCellsStats('GSM', 'post')));
 router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('ALL')));
 
 
