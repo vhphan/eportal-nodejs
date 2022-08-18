@@ -6,14 +6,39 @@ const {
     networkDailyStatsLTE,
     clusterDailyStatsLTE,
     regionDailyStatsLTE,
-    cellDailyStatsLTE, networkDailyStatsNR, cellDailyStatsNR, cellsList, regionDailyStatsNR, clusterDailyStatsNR,
-    cellsListNR, cellsListLTE, customCellListStatsNR, customCellListStatsNR2, customCellListStatsLTE,
-    networkDailyPlmnStatsNR, networkDailyPlmnStatsLTE, regionDailyPlmnStatsNR, clusterDailyPlmnStatsNR,
-    cellDailyPlmnStatsNR, regionDailyPlmnStatsLTE, clusterDailyPlmnStatsLTE, cellDailyPlmnStatsLTE
+    cellDailyStatsLTE,
+    networkDailyStatsNR,
+    cellDailyStatsNR,
+    cellsList,
+    regionDailyStatsNR,
+    clusterDailyStatsNR,
+    cellsListNR,
+    cellsListLTE,
+    customCellListStatsNR,
+    customCellListStatsNR2,
+    customCellListStatsLTE,
+    networkDailyPlmnStatsNR,
+    networkDailyPlmnStatsLTE,
+    regionDailyPlmnStatsNR,
+    clusterDailyPlmnStatsNR,
+    cellDailyPlmnStatsNR,
+    regionDailyPlmnStatsLTE,
+    clusterDailyPlmnStatsLTE,
+    cellDailyPlmnStatsLTE
 } = require("../../db/pgjs/DailyQueriesStatsV3");
 
 const {logRequest} = require("../../middleware/logger");
-const {networkHourlyStatsNR, regionHourlyStatsNR, clusterHourlyStatsNR, cellHourlyStatsNR, networkHourlyStatsLTE} = require("../../db/pgjs/HourlyQueriesStatsV3");
+
+const {
+    networkHourlyStatsNR,
+    regionHourlyStatsNR,
+    clusterHourlyStatsNR,
+    cellHourlyStatsNR,
+    networkHourlyStatsLTE,
+    clusterHourlyStatsLTE,
+    regionHourlyStatsLTE,
+    cellHourlyStatsLTE
+} = require("../../db/pgjs/HourlyQueriesStatsV3");
 
 const router = express.Router();
 
@@ -169,5 +194,25 @@ router.get(
     asyncHandler(networkHourlyStatsLTE)
 );
 
+
+router.get(
+    '/regionHourlyLTE',
+    cache15m,
+    asyncHandler(regionHourlyStatsLTE)
+);
+
+
+router.get(
+    ['/clusterHourlyLTE', '/clusterStatsHourlyLTE'],
+    cache15m,
+    asyncHandler(clusterHourlyStatsLTE)
+);
+
+
+router.get(
+    ['/cellHourlyLTE', '/networkHourlyLTECell'],
+    cache15m,
+    asyncHandler(cellHourlyStatsLTE)
+);
 
 module.exports = router;
