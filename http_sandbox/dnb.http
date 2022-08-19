@@ -235,7 +235,7 @@ Accept: application/json
 
 
 ###
-GET http://localhost:3001/node/dnb/v3/cellHourlyLTE?object=DJJBR0445_L7_0020&version=1.2
+GET http://localhost:3001/node/dnb/v3/statsForCustomCellsListLTEHourly?cells[]=DWKUL0670_L7_0030&cells[]=DJJBR0518_L7_0030&cells[]=DWKUL0155_L7_0010&version=1.4
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
