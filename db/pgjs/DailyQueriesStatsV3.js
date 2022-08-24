@@ -2,6 +2,7 @@ const sql = require('./PgJsBackend');
 const {arrayToCsv} = require("../../routes/utils");
 const {logger} = require("../../middleware/logger");
 const {networkKpiList, plmnKpiList} = require("../constants");
+const {response} = require("express");
 
 
 const resultsAsExcelFormat = (results, {parseDate = false, dateColumns = []}) => async (request, response) => {
@@ -220,7 +221,7 @@ const cellsList = async (request, response) => {
                "Sitename",
                t2.on_board_date::varchar(10) as on_board_date
         FROM dnb.rfdb.cell_mapping as t1
-                 INNER JOIN dnb.rfdb.df_dpm as t2 on t1."SITEID" = t2.site_id;
+                 LEFT JOIN dnb.rfdb.df_dpm as t2 on t1."SITEID" = t2.site_id;
     `;
     return sendResults(request, response, results);
 }
@@ -229,7 +230,7 @@ const cellsListNR = async (request, response) => {
     const results = await sql`
         SELECT nrcellcu as object, on_board_date:: varchar(10)
         FROM stats_v3."NRCELLCU" t1
-                 INNER JOIN rfdb.df_dpm t2 on left (t1.nrcellcu, 9) = t2.site_id
+                 LEFT JOIN rfdb.df_dpm t2 on left (t1.nrcellcu, 9) = t2.site_id
         where t1.date_id in (select max (date_id) from stats_v3."NRCELLCU")
         GROUP BY nrcellcu, on_board_date
         order by nrcellcu;
@@ -241,7 +242,7 @@ const cellsListLTE = async (request, response) => {
     const results = await sql`
         SELECT eutrancellfdd as object, on_board_date:: varchar(10)
         FROM stats_v3."EUTRANCELLFDD" t1
-                 INNER JOIN rfdb.df_dpm t2 on left (t1.eutrancellfdd, 9) = t2.site_id
+                 LEFT JOIN rfdb.df_dpm t2 on left (t1.eutrancellfdd, 9) = t2.site_id
         where t1.date_id in (select max (date_id) from stats_v3."EUTRANCELLFDD")
         GROUP BY eutrancellfdd, on_board_date
         order by eutrancellfdd;
@@ -250,6 +251,7 @@ const cellsListLTE = async (request, response) => {
 }
 
 const customCellListStatsNR = async (request, response) => {
+
     const cells = request.query.cells;
     const results = await sql`
         with counters as (SELECT dt1.date_id,
@@ -1275,12 +1277,324 @@ const cellDailyPlmnStatsLTE = async (request, response) => {
         ORDER BY time;
     `;
     return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
+}
 
+const clusterStatsAggregatedNR = async (request, response) => {
+    const {startDate, endDate} = request.query;
+    const results = await sql`
+                            WITH COUNTERS AS (SELECT "Cluster_ID",
+                            sum(period_duration)                      AS period_duration,
+                            sum(pmactiveuedlmax)                      AS pmactiveuedlmax,
+                            sum(pmmacharqdlack16qam)                  AS pmmacharqdlack16qam,
+                            sum(pmmacharqdlack256qam)                 AS pmmacharqdlack256qam,
+                            sum(pmmacharqdlack64qam)                  AS pmmacharqdlack64qam,
+                            sum(pmmacharqdlackqpsk)                   AS pmmacharqdlackqpsk,
+                            sum(pmmacharqdldtx16qam)                  AS pmmacharqdldtx16qam,
+                            sum(pmmacharqdldtx256qam)                 AS pmmacharqdldtx256qam,
+                            sum(pmmacharqdldtx64qam)                  AS pmmacharqdldtx64qam,
+                            sum(pmmacharqdldtxqpsk)                   AS pmmacharqdldtxqpsk,
+                            sum(pmmacharqdlnack16qam)                 AS pmmacharqdlnack16qam,
+                            sum(pmmacharqdlnack256qam)                AS pmmacharqdlnack256qam,
+                            sum(pmmacharqdlnack64qam)                 AS pmmacharqdlnack64qam,
+                            sum(pmmacharqdlnackqpsk)                  AS pmmacharqdlnackqpsk,
+                            sum(pmmacharqulack16qam)                  AS pmmacharqulack16qam,
+                            sum(pmmacharqulack256qam)                 AS pmmacharqulack256qam,
+                            sum(pmmacharqulack64qam)                  AS pmmacharqulack64qam,
+                            sum(pmmacharqulackqpsk)                   AS pmmacharqulackqpsk,
+                            sum(pmmacharquldtx16qam)                  AS pmmacharquldtx16qam,
+                            sum(pmmacharquldtx256qam)                 AS pmmacharquldtx256qam,
+                            sum(pmmacharquldtx64qam)                  AS pmmacharquldtx64qam,
+                            sum(pmmacharquldtxqpsk)                   AS pmmacharquldtxqpsk,
+                            sum(pmmacharqulnack16qam)                 AS pmmacharqulnack16qam,
+                            sum(pmmacharqulnack256qam)                AS pmmacharqulnack256qam,
+                            sum(pmmacharqulnack64qam)                 AS pmmacharqulnack64qam,
+                            sum(pmmacharqulnackqpsk)                  AS pmmacharqulnackqpsk,
+                            sum(pmmacpdcchblockingpdschoccasions)     AS pmmacpdcchblockingpdschoccasions,
+                            sum(pmmacpdcchblockingpuschoccasions)     AS pmmacpdcchblockingpuschoccasions,
+                            sum(pmmacrbsymavaildl)                    AS pmmacrbsymavaildl,
+                            sum(pmmacrbsymavailul)                    AS pmmacrbsymavailul,
+                            sum(pmmacrbsymcsirs)                      AS pmmacrbsymcsirs,
+                            sum(pmmacrbsymusedpdcchtypea)             AS pmmacrbsymusedpdcchtypea,
+                            sum(pmmacrbsymusedpdcchtypeb)             AS pmmacrbsymusedpdcchtypeb,
+                            sum(pmmacrbsymusedpdschtypea)             AS pmmacrbsymusedpdschtypea,
+                            sum(pmmacrbsymusedpdschtypeabroadcasting) AS pmmacrbsymusedpdschtypeabroadcasting,
+                            sum(pmmacrbsymusedpuschtypea)             AS pmmacrbsymusedpuschtypea,
+                            sum(pmmacrbsymusedpuschtypeb)             AS pmmacrbsymusedpuschtypeb,
+                            sum(pmmactimedldrb)                       AS pmmactimedldrb,
+                            sum(pmmactimeulresue)                     AS pmmactimeulresue,
+                            sum(pmmacvoldl)                           AS pmmacvoldl,
+                            sum(pmmacvoldldrb)                        AS pmmacvoldldrb,
+                            sum(pmmacvolul)                           AS pmmacvolul,
+                            sum(pmmacvolulresue)                      AS pmmacvolulresue,
+                            sum(pmpdschschedactivity)                 AS pmpdschschedactivity,
+                            sum(pmpuschschedactivity)                 AS pmpuschschedactivity,
+                            sum(pmcelldowntimeauto)                   AS pmcelldowntimeauto,
+                            sum(pmcelldowntimeman)                    AS pmcelldowntimeman
+                            FROM dnb.stats_v3."NRCELLDU" as dt
+                            LEFT JOIN dnb.rfdb.cell_mapping as cm on cm."Cellname" = dt."nrcelldu"
+                            INNER JOIN (SELECT site_id, on_board_date::date, time::date
+                                       FROM dnb.rfdb.df_dpm,
+                                            generate_series(on_board_date, now(), '1 day') as time) as obs
+                                      on obs.time = dt."date_id" and left(dt."nr_name", 9) like obs.site_id
+                            WHERE "Cluster_ID" is not null
+                            AND date_id>=${startDate} AND date_id<=${endDate}
+                            GROUP BY "Cluster_ID"
+                            )
+                            SELECT "Cluster_ID",
+                            100 * ((60 * (period_duration)) - ((pmcelldowntimeauto + (pmcelldowntimeman))) ||
+                            (60 * (period_duration)::double precision))    AS "Cell Availability",
+                            100 * (pmmacpdcchblockingpdschoccasions + pmmacpdcchblockingpuschoccasions) ||
+                            (pmmacrbsymusedpdcchtypea + pmmacrbsymusedpdcchtypeb) AS "E-RAB Block Rate",
+                            100 * (pmmacrbsymusedpdschtypea + pmmacrbsymusedpdschtypeabroadcasting + pmmacrbsymcsirs) ||
+                            (pmmacrbsymavaildl)                                   AS "Resource Block Utilizing Rate (DL)",
+                            100 * (pmmacrbsymusedpuschtypea + pmmacrbsymusedpuschtypeb) ||
+                            (pmmacrbsymavailul)                                   AS "Resource Block Utilizing Rate (UL)",
+                            100 * (pmmacharqulnackqpsk + pmmacharqdlnack16qam + pmmacharqdlnack64qam) ||
+                            (pmmacharqulackqpsk + pmmacharqulack16qam + pmmacharqulack64qam + pmmacharqulnackqpsk + pmmacharqulnack16qam +
+                            pmmacharqulnack64qam)                                AS "UL BLER",
+                            64 * (pmmacvoldldrb || pmmactimedldrb) / 1000         AS "DL User Throughput",
+                            64 * (pmmacvolulresue || pmmactimeulresue) / 1000     AS "UL User Throughput",
+                            64 * (pmmacvoldl || pmpdschschedactivity) / 1000      AS "DL Cell Throughput",
+                            64 * pmmacvolul || pmpuschschedactivity / 1000        AS "UL Cell Throughput",
+                            pmmacvoldl / 1024 / 1024 / 1024                       AS "DL Data Volume",
+                            pmmacvolul / 1024 / 1024 / 1024                       AS "UL Data Volume",
+                            pmactiveuedlmax                                       AS "Max of Active User",
+                            (pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk) ||
+                            ((pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                            pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam +
+                            pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk)) *
+                            100                                                   AS "DL QPSK %",
+                            ((pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam) ||
+                            (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                            pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam +
+                            pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk)) *
+                            100                                                   AS "DL 16QAM%",
+                            ((pmmacharqdlack64qam + pmmacharqdlnack64qam + pmmacharqdldtx64qam) ||
+                            (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                            pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam +
+                            pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk)) *
+                            100                                                   AS "DL 64QAM%",
+                            ((pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam) ||
+                            (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                            pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam +
+                            pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk)) *
+                            100                                                   AS "DL 256QAM%",
+                            ((pmmacharqulackqpsk + pmmacharqulnackqpsk + pmmacharquldtxqpsk) ||
+                            (pmmacharqulack256qam + pmmacharqulnack256qam + pmmacharquldtx256qam + pmmacharqulack64qam +
+                            pmmacharqulnack64qam + pmmacharquldtx64qam + pmmacharqulack16qam + pmmacharqulnack16qam + pmmacharquldtx16qam +
+                            pmmacharqulackqpsk + pmmacharqulnackqpsk + pmmacharquldtxqpsk)) *
+                            100                                                   AS "UL QPSK %",
+                            ((pmmacharqulack16qam + pmmacharqulnack16qam + pmmacharquldtx16qam) ||
+                            (pmmacharqulack256qam + pmmacharqulnack256qam + pmmacharquldtx256qam + pmmacharqulack64qam +
+                            pmmacharqulnack64qam + pmmacharquldtx64qam + pmmacharqulack16qam + pmmacharqulnack16qam + pmmacharquldtx16qam +
+                            pmmacharqulackqpsk + pmmacharqulnackqpsk + pmmacharquldtxqpsk)) *
+                            100                                                   AS "UL 16QAM%",
+                            ((pmmacharqulack64qam + pmmacharqulnack64qam + pmmacharquldtx64qam) ||
+                            (pmmacharqulack256qam + pmmacharqulnack256qam + pmmacharquldtx256qam + pmmacharqulack64qam +
+                            pmmacharqulnack64qam + pmmacharquldtx64qam + pmmacharqulack16qam + pmmacharqulnack16qam + pmmacharquldtx16qam +
+                            pmmacharqulackqpsk + pmmacharqulnackqpsk + pmmacharquldtxqpsk)) *
+                            100                                                   AS "UL 64QAM%",
+                            ((pmmacharqulack256qam + pmmacharqulnack256qam + pmmacharquldtx256qam) ||
+                            (pmmacharqulack256qam + pmmacharqulnack256qam + pmmacharquldtx256qam + pmmacharqulack64qam +
+                            pmmacharqulnack64qam + pmmacharquldtx64qam + pmmacharqulack16qam + pmmacharqulnack16qam + pmmacharquldtx16qam +
+                            pmmacharqulackqpsk + pmmacharqulnackqpsk + pmmacharquldtxqpsk)) *
+                            100                                                   AS "UL 256QAM%",
+                            row_number() over ()                                  as id
+                            FROM COUNTERS;
+    
+    `
+    return sendResults(request, response, results);
+}
 
+const clusterStatsAggregatedLTE = async (request, response) => {
+    const {startDate, endDate} = request.query;
+    const results = sql`
+                WITH COUNTERS AS (SELECT
+                "Cluster_ID",
+                -- <editor-fold desc="Counters">
+                sum(period_duration)                    AS period_duration,
+                sum(pmactiveuedlmax)                    AS pmactiveuedlmax,
+                sum(pmcelldowntimeauto)                 AS pmcelldowntimeauto,
+                sum(pmcelldowntimeman)                  AS pmcelldowntimeman,
+                sum(pmerabestabattadded)                AS pmerabestabattadded,
+                sum(pmerabestabattaddedhoongoing)       AS pmerabestabattaddedhoongoing,
+                sum(pmerabestabattinit)                 AS pmerabestabattinit,
+                sum(pmerabestabsuccadded)               AS pmerabestabsuccadded,
+                sum(pmerabestabsuccinit)                AS pmerabestabsuccinit,
+                sum(pmerabrelabnormalenb)               AS pmerabrelabnormalenb,
+                sum(pmerabrelabnormalenbact)            AS pmerabrelabnormalenbact,
+                sum(pmerabrelabnormalmmeact)            AS pmerabrelabnormalmmeact,
+                sum(pmerabrelmme)                       AS pmerabrelmme,
+                sum(pmerabrelnormalenb)                 AS pmerabrelnormalenb,
+                sum(pmmacharqdlack16qam)                AS pmmacharqdlack16qam,
+                sum(pmmacharqdlack256qam)               AS pmmacharqdlack256qam,
+                sum(pmmacharqdlack64qam)                AS pmmacharqdlack64qam,
+                sum(pmmacharqdlackqpsk)                 AS pmmacharqdlackqpsk,
+                sum(pmmacharqdldtx16qam)                AS pmmacharqdldtx16qam,
+                sum(pmmacharqdldtx256qam)               AS pmmacharqdldtx256qam,
+                sum(pmmacharqdldtx64qam)                AS pmmacharqdldtx64qam,
+                sum(pmmacharqdldtxqpsk)                 AS pmmacharqdldtxqpsk,
+                sum(pmmacharqdlnack16qam)               AS pmmacharqdlnack16qam,
+                sum(pmmacharqdlnack256qam)              AS pmmacharqdlnack256qam,
+                sum(pmmacharqdlnack64qam)               AS pmmacharqdlnack64qam,
+                sum(pmmacharqdlnackqpsk)                AS pmmacharqdlnackqpsk,
+                sum(pmmacharqulfail16qam)               AS pmmacharqulfail16qam,
+                sum(pmmacharqulfail256qam)              AS pmmacharqulfail256qam,
+                sum(pmmacharqulfail64qam)               AS pmmacharqulfail64qam,
+                sum(pmmacharqulfailqpsk)                AS pmmacharqulfailqpsk,
+                sum(pmmacharqulsucc16qam)               AS pmmacharqulsucc16qam,
+                sum(pmmacharqulsucc256qam)              AS pmmacharqulsucc256qam,
+                sum(pmmacharqulsucc64qam)               AS pmmacharqulsucc64qam,
+                sum(pmmacharqulsuccqpsk)                AS pmmacharqulsuccqpsk,
+                sum(pmpdcplatpkttransdl)                AS pmpdcplatpkttransdl,
+                sum(pmpdcplattimedl)                    AS pmpdcplattimedl,
+                sum(pmpdcppktdiscdlho)                  AS pmpdcppktdiscdlho,
+                sum(pmpdcppktdiscdlpelr)                AS pmpdcppktdiscdlpelr,
+                sum(pmpdcppktdiscdlpelruu)              AS pmpdcppktdiscdlpelruu,
+                sum(pmpdcppktfwddl)                     AS pmpdcppktfwddl,
+                sum(pmpdcppktlostul)                    AS pmpdcppktlostul,
+                sum(pmpdcppktreceiveddl)                AS pmpdcppktreceiveddl,
+                sum(pmpdcppktreceivedul)                AS pmpdcppktreceivedul,
+                sum(pmpdcpvoldldrb)                     AS pmpdcpvoldldrb,
+                sum(pmpdcpvoldldrblasttti)              AS pmpdcpvoldldrblasttti,
+                sum(pmpdcpvoluldrb)                     AS pmpdcpvoluldrb,
+                sum(pmrrcconnestabatt)                  AS pmrrcconnestabatt,
+                sum(pmrrcconnestabattmos)               AS pmrrcconnestabattmos,
+                sum(pmrrcconnestabattreatt)             AS pmrrcconnestabattreatt,
+                sum(pmrrcconnestabattreattmos)          AS pmrrcconnestabattreattmos,
+                sum(pmrrcconnestabfailmmeovlmod)        AS pmrrcconnestabfailmmeovlmod,
+                sum(pmrrcconnestabfailmmeovlmos)        AS pmrrcconnestabfailmmeovlmos,
+                sum(pmrrcconnestabsucc)                 AS pmrrcconnestabsucc,
+                sum(pmrrcconnestabsuccmos)              AS pmrrcconnestabsuccmos,
+                sum(pmrrcconnmax)                       AS pmrrcconnmax,
+                sum(pmrrcconnmaxplmn0)                  AS pmrrcconnmaxplmn0,
+                sum(pmrrcconnmaxplmn1)                  AS pmrrcconnmaxplmn1,
+                sum(pmrrcconnmaxplmn2)                  AS pmrrcconnmaxplmn2,
+                sum(pmrrcconnmaxplmn3)                  AS pmrrcconnmaxplmn3,
+                sum(pmrrcconnmaxplmn4)                  AS pmrrcconnmaxplmn4,
+                sum(pmrrcconnmaxplmn5)                  AS pmrrcconnmaxplmn5,
+                sum(pmrrcconnmaxplmn6)                  AS pmrrcconnmaxplmn6,
+                sum(pms1sigconnestabatt)                AS pms1sigconnestabatt,
+                sum(pms1sigconnestabfailmmeovlmos)      AS pms1sigconnestabfailmmeovlmos,
+                sum(pms1sigconnestabsucc)               AS pms1sigconnestabsucc,
+                sum(pmschedactivitycelldl)              AS pmschedactivitycelldl,
+                sum(pmschedactivitycellul)              AS pmschedactivitycellul,
+                sum(pmuectxtfetchattintraenbhoin)       AS pmuectxtfetchattintraenbhoin,
+                sum(pmuectxtfetchattx2hoin)             AS pmuectxtfetchattx2hoin,
+                sum(pmuectxtfetchsuccintraenbhoin)      AS pmuectxtfetchsuccintraenbhoin,
+                sum(pmuectxtfetchsuccx2hoin)            AS pmuectxtfetchsuccx2hoin,
+                sum(pmuethptimedl)                      AS pmuethptimedl,
+                sum(pmuethptimeul)                      AS pmuethptimeul,
+                sum(pmuethpvolul)                       AS pmuethpvolul,
+                sum(pmflexerabestabsuccinit_endc2to99)  as pmflexerabestabsuccinit_endc2to99,
+                sum(pmflexerabestabsuccadded_endc2to99) as pmflexerabestabsuccadded_endc2to99,
+                sum(pmflexerabestabattinit_endc2to99)   as pmflexerabestabattinit_endc2to99,
+                sum(pmflexerabestabattadded_endc2to99)  as pmflexerabestabattadded_endc2to99
+                -- </editor-fold>
+                FROM dnb.stats_v3."EUTRANCELLFDD" as dt
+                
+                LEFT JOIN (SELECT date_id,
+                                 erbs,
+                                 eutrancellfdd,
+                                 sum(pmflexerabestabsuccinit)  as pmflexerabestabsuccinit_endc2to99,
+                                 sum(pmflexerabestabsuccadded) as pmflexerabestabsuccadded_endc2to99,
+                                 sum(pmflexerabestabattinit)   as pmflexerabestabattinit_endc2to99,
+                                 sum(pmflexerabestabattadded)  as pmflexerabestabattadded_endc2to99
+                          FROM dnb.stats_v3."EUTRANCELLFDD_FLEX"
+                          WHERE flex_filtername ilike 'Plmn%endc2to99'
+                          group by date_id, erbs, eutrancellfdd) as dt2
+                         using (date_id, erbs, eutrancellfdd)
+                
+                LEFT JOIN dnb.rfdb.cell_mapping as cm on cm."Cellname" = dt."eutrancellfdd"
+                INNER JOIN (SELECT site_id, on_board_date::date, time::date
+                           FROM dnb.rfdb.df_dpm,
+                                generate_series(on_board_date, now(), '1 day') as time) as obs
+                          on obs.time = dt."date_id" and left(dt."erbs", 9) like obs.site_id
+                
+                WHERE date_id>=${startDate} AND date_id<=${endDate}
+                group by "Cluster_ID" )
+                SELECT "Cluster_ID",
+                100 * ((60 * (period_duration)) - ((pmcelldowntimeauto) + (pmcelldowntimeman))) ||
+                (60 * (period_duration))::double precision                                                          AS "Cell Availability",
+                100 * (pmrrcconnestabsucc || (pmrrcconnestabatt - pmrrcconnestabattreatt - pmrrcconnestabfailmmeovlmos -
+                         pmrrcconnestabfailmmeovlmod)) *
+                (pms1sigconnestabsucc || (pms1sigconnestabatt - pms1sigconnestabfailmmeovlmos)) *
+                (pmflexerabestabsuccinit_endc2to99 + pmflexerabestabsuccadded_endc2to99) ||
+                (pmflexerabestabattinit_endc2to99 + pmflexerabestabattadded_endc2to99)                              AS "Call Setup Success Rate",
+                
+                100 * (pmflexerabestabsuccinit_endc2to99 + pmflexerabestabsuccadded_endc2to99) ||
+                (pmflexerabestabattinit_endc2to99 + pmflexerabestabattadded_endc2to99)                              AS "E-RAB Setup Success Rate_non-GBR (%)",
+                
+                100 * (pmrrcconnestabsucc || (pmrrcconnestabatt - pmrrcconnestabattreatt - pmrrcconnestabfailmmeovlmos -
+                         pmrrcconnestabfailmmeovlmod))                                         AS "RRC Setup Success Rate (Service) (%)",
+                100 * pmrrcconnestabsuccmos ||
+                (pmrrcconnestabattmos - pmrrcconnestabattreattmos)                                                  AS "RRC Setup Success Rate (Signaling) (%)",
+                100 * (pmerabestabsuccinit + pmerabestabsuccadded) ||
+                (pmerabestabattinit + pmerabestabattadded - pmerabestabattaddedhoongoing)                           AS "E-RAB Setup Success Rate (%)",
+                100 * (pmerabrelabnormalenbact + pmerabrelabnormalmmeact) ||
+                (pmerabrelabnormalenb + pmerabrelnormalenb + pmerabrelmme)                                          AS "Erab Drop Call rate",
+                100 * (pmuectxtfetchsuccx2hoin + pmuectxtfetchsuccintraenbhoin) ||
+                (pmuectxtfetchattx2hoin + pmuectxtfetchattintraenbhoin)                                             AS "Handover In Success Rate",
+                100 * ((pmmacharqulfailqpsk + pmmacharqulfail16qam + pmmacharqulfail64qam + pmmacharqulfail256qam) ||
+                (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam + pmmacharqulsucc256qam +
+                pmmacharqulfailqpsk + pmmacharqulfail16qam + pmmacharqulfail64qam + pmmacharqulfail256qam)) AS "UL BLER",
+                (pmpdcpvoldldrb - pmpdcpvoldldrblasttti) || pmuethptimedl                                           AS "DL User Throughput",
+                pmuethpvolul || pmuethptimeul                                                                       AS "UL User Throughput",
+                pmpdcpvoldldrb || pmschedactivitycelldl                                                             AS "DL Cell Throughput",
+                pmpdcpvoluldrb || pmschedactivitycellul                                                             AS "UL Cell Throughput",
+                pmpdcpvoldldrb || (8 * 1024)::double precision                                                      AS "DL Data Volume",
+                pmpdcpvoluldrb || (8 * 1024)::double precision                                                      AS "UL Data Volume",
+                pmrrcconnmax                                                                                        AS "Max of RRC Connected User",
+                pmactiveuedlmax                                                                                     AS "Max of Active User",
+                100 * (pmpdcppktdiscdlpelr + pmpdcppktdiscdlpelruu + pmpdcppktdiscdlho) ||
+                (pmpdcppktreceiveddl - pmpdcppktfwddl)                                                              AS "Packet Loss (DL)",
+                100 * pmpdcppktlostul || (pmpdcppktlostul + pmpdcppktreceivedul)                                    AS "Packet Loss UL",
+                pmpdcplattimedl || pmpdcplatpkttransdl                                                              AS "Latency (only Radio interface)",
+                100 * (pmmacharqdlackqpsk + pmmacharqdlnackqpsk + pmmacharqdldtxqpsk) ||
+                (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam +
+                pmmacharqdlackqpsk + pmmacharqdlnackqpsk +
+                pmmacharqdldtxqpsk)                                                                                AS "DL QPSK %",
+                100 * (pmmacharqdlack16qam + pmmacharqdlnack16qam + pmmacharqdldtx16qam) ||
+                (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam +
+                pmmacharqdldtx16qam +
+                pmmacharqdlackqpsk + pmmacharqdlnackqpsk +
+                pmmacharqdldtxqpsk)                                                                          AS "DL 16QAM%",
+                100 * (pmmacharqdlack64qam + pmmacharqdlnack64qam + pmmacharqdldtx64qam) ||
+                (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam +
+                pmmacharqdldtx16qam +
+                pmmacharqdlackqpsk + pmmacharqdlnackqpsk +
+                pmmacharqdldtxqpsk)                                                                          AS "DL 64QAM%",
+                100 * ((pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam) ||
+                (pmmacharqdlack256qam + pmmacharqdlnack256qam + pmmacharqdldtx256qam + pmmacharqdlack64qam +
+                pmmacharqdlnack64qam + pmmacharqdldtx64qam + pmmacharqdlack16qam + pmmacharqdlnack16qam +
+                pmmacharqdldtx16qam +
+                pmmacharqdlackqpsk + pmmacharqdlnackqpsk +
+                pmmacharqdldtxqpsk))                                                                        AS "DL 256QAM%",
+                100 * ((pmmacharqulsuccqpsk) ||
+                (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam +
+                pmmacharqulsucc256qam))                                                                     AS "UL QPSK %",
+                100 * ((pmmacharqulsucc16qam) ||
+                (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam +
+                pmmacharqulsucc256qam))                                                                     AS "UL 16QAM%",
+                100 * ((pmmacharqulsucc64qam) ||
+                (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam +
+                pmmacharqulsucc256qam))                                                                     AS "UL 64QAM%",
+                100 * ((pmmacharqulsucc256qam) ||
+                (pmmacharqulsuccqpsk + pmmacharqulsucc16qam + pmmacharqulsucc64qam +
+                pmmacharqulsucc256qam))                                                                     AS "UL 256QAM%",
+                row_number() over ()                                                                                as id
+                FROM COUNTERS;
+    `
+    return sendResults(request, response, results);
 }
 
 
 module.exports = {
+    clusterStatsAggregatedNR,
+    clusterStatsAggregatedLTE,
     networkDailyStatsLTE,
     regionDailyStatsLTE,
     clusterDailyStatsLTE,

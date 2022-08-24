@@ -241,3 +241,20 @@ API: {{apiKey}}
 Accept: application/json
 
 
+
+###
+GET http://localhost:3001/node/dnb/v3/cellListNR?version=1.5
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+
+
+###
+GET http://localhost:3001/node/dnb/v3/clusterCustomDatesNR?startDate=2022-08-11&endDate=2022-08-15&version=1.5
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+

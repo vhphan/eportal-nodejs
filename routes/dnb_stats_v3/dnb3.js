@@ -24,7 +24,7 @@ const {
     cellDailyPlmnStatsNR,
     regionDailyPlmnStatsLTE,
     clusterDailyPlmnStatsLTE,
-    cellDailyPlmnStatsLTE
+    cellDailyPlmnStatsLTE, clusterStatsAggregatedNR, clusterStatsAggregatedLTE
 } = require("../../db/pgjs/DailyQueriesStatsV3");
 
 const {logRequest} = require("../../middleware/logger");
@@ -213,6 +213,19 @@ router.get(
     ['/cellHourlyLTE', '/networkHourlyLTECell'],
     cache15m,
     asyncHandler(cellHourlyStatsLTE)
+);
+
+
+router.get(
+    ['/clusterCustomDatesNR'],
+    cache15m,
+    asyncHandler(clusterStatsAggregatedNR)
+);
+
+router.get(
+    ['/clusterCustomDatesLTE'],
+    cache15m,
+    asyncHandler(clusterStatsAggregatedLTE)
 );
 
 router.get('/statsForCustomCellsListNRHourly', asyncHandler(customCellListHourlyStatsNR))
