@@ -284,6 +284,7 @@ const customCellListHourlyStatsNR = async (request, response) => {
                           WHERE nrcellcu IN ${sql(cells)}
                           GROUP BY dt1.date_id)
         SELECT "date_id"::varchar(19) as    time,
+        'custom cells list' as object,
                     -- <editor-fold desc="kpi nrcellcu">
                     100 * (pmendcsetupuesucc || pmendcsetupueatt)                             AS "ENDC SR",
                     100 * pmendcrelueabnormalsgnbact ||
@@ -478,8 +479,9 @@ const customCellListHourlyStatsNR2 = async (request, response) => {
                                           WHERE "Cellname" IN ${sql(cells)})
                            group by date_id, erbs)
         SELECT counters1.date_id::varchar(19) as time,
-                        100 * (pmpdcppkttransdldiscqos - pmpdcppkttransdldiscaqmqos) / pmpdcppkttransdlqos AS "Packet Loss (DL)",
-                        100 * (pmpdcppktlossulqos - pmpdcppktreculoooqos) /
+        'custom cells list' as object,
+                        100 * (pmpdcppkttransdldiscqos - pmpdcppkttransdldiscaqmqos) || pmpdcppkttransdlqos AS "Packet Loss (DL)",
+                        100 * (pmpdcppktlossulqos - pmpdcppktreculoooqos) ||
                         (pmpdcppktreculqos + pmpdcppktlossultoqos - pmpdcppktlossultodiscqos -
                         pmpdcppktreculoooqos)                                                             AS "Packet Loss (UL)",
                         nom_cpu || denom_cpu                                                               as "gNobeB CPU Load"
@@ -933,8 +935,10 @@ const customCellListHourlyStatsLTE = async (request, response) => {
                            FROM dnb.stats_v3_hourly."EUTRANCELLRELATION_PER_CELL" as dt1
                            WHERE dt1.eutrancellfdd IN ${sql(cells)}
                            group by "date_id")
-        SELECT counters1.date_id:: varchar(10)                                           as "time",
-               -- <editor-fold desc="kpis1"> 100 * ((60 * (period_duration)) - ((pmcelldowntimeauto) + (pmcelldowntimeman))) || (60 * (period_duration)) ::double precision                                                          AS "Cell Availability",
+        SELECT counters1.date_id:: varchar(19)                                           as "time",
+               'custom cells list' as "object",
+               -- <editor-fold desc="kpis1"> 
+               100 * ((60 * (period_duration)) - ((pmcelldowntimeauto) + (pmcelldowntimeman))) || (60 * (period_duration)) ::double precision                                                          AS "Cell Availability",
                100 *
                (pmrrcconnestabsucc || (pmrrcconnestabatt - pmrrcconnestabattreatt - pmrrcconnestabfailmmeovlmos -
                                        pmrrcconnestabfailmmeovlmod)) *
@@ -963,8 +967,8 @@ const customCellListHourlyStatsLTE = async (request, response) => {
                pmuethpvolul || pmuethptimeul                                             AS "UL User Throughput",
                pmpdcpvoldldrb || pmschedactivitycelldl                                   AS "DL Cell Throughput",
                pmpdcpvoluldrb || pmschedactivitycellul                                   AS "UL Cell Throughput",
-               pmpdcpvoldldrb || (8 * 1024) ::double precision                           AS "DL Data Volume",
-               pmpdcpvoluldrb || (8 * 1024)::double precision                            AS "UL Data Volume",
+               pmpdcpvoldldrb || (8 * 1024 * 1024) ::double precision                           AS "DL Data Volume",
+               pmpdcpvoluldrb || (8 * 1024 * 1024)::double precision                            AS "UL Data Volume",
                pmrrcconnmax                                                              AS "Max of RRC Connected User",
                pmactiveuedlmax                                                           AS "Max of Active User",
                100 * (pmpdcppktdiscdlpelr + pmpdcppktdiscdlpelruu + pmpdcppktdiscdlho) ||
@@ -1068,6 +1072,37 @@ const customCellListHourlyStatsLTE = async (request, response) => {
     return response.status(200).json(results);
 }
 
+
+
+const networkHourlyPlmnStatsNR = async (request, response) => {
+    const results = await sql`
+        SELECT tt1.date_id::varchar(19) as time,
+                       tt1.mobile_operator as object,
+                       ${sql(plmnKpiList.NR)}
+        FROM 
+        dnb.stats_v3_hourly.nrcellcu_flex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3_hourly.nrcelldu_flex_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
+        WHERE tt1."Region" = 'All'
+        ORDER BY time, tt1.id;
+    `;
+    return sendResults(request, response, results);
+};
+
+const networkHourlyPlmnStatsLTE = async (request, response) => {
+    const results = await sql`
+        SELECT tt1.date_id::varchar(19) as time,
+       tt1.mobile_operator as object,
+       tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
+        FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
+        WHERE tt1."Region" = 'All'
+          and "Max of RRC Connected User"
+            > 0
+        ORDER BY time, tt1.id;
+    `;
+    return sendResults(request, response, results);
+};
+
 module.exports = {
     networkHourlyStatsNR,
     regionHourlyStatsNR,
@@ -1081,4 +1116,7 @@ module.exports = {
     clusterHourlyStatsLTE,
     cellHourlyStatsLTE,
     customCellListHourlyStatsLTE,
+
+    networkHourlyPlmnStatsNR,
+    networkHourlyPlmnStatsLTE,
 };

@@ -119,7 +119,11 @@ const plmnKpiList = {
         'Max of RRC Connected User'
     ],
 }
-
+//
+// const fileRepo = {
+//     celcom: '/home2/eproject/nodejs/files/celcom'
+//
+// }
 
 module.exports = {
     networkKpiList,

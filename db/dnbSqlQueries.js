@@ -778,8 +778,8 @@ SELECT t1."time",
 
        ("pmPdcpVolDlDrb" - "pmPdcpVolDlDrbLastTTI") / nullif("pmUeThpTimeDl", 0)            AS "DL User Throughput",
 
-       "pmPdcpVolDlDrb" / (8 * 1024)                                                        AS "DL Data Volume",
-       "pmPdcpVolUlDrb" / (8 * 1024)                                                        AS "UL Data Volume",
+       "pmPdcpVolDlDrb" / (8 * 1024 * 1024)                                                        AS "DL Data Volume",
+       "pmPdcpVolUlDrb" / (8 * 1024 * 1024)                                                        AS "UL Data Volume",
 
        100 * ((60 * "Sum(PERIOD_DURATION) for") - ("Sum(pmCellDowntimeAuto) for" + "Sum(pmCellDowntimeMan) for")) /
        nullif(60 * "Sum(PERIOD_DURATION) for", 0)                                           AS "Cell Availability",

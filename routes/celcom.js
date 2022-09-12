@@ -8,10 +8,12 @@ const {createListeners, createListener, sendEmail} = require("../db/utils");
 const sql = require("../db/celcom/PgJsBackend");
 const {arrayToCsv, gMap} = require("./utils");
 const {excelTestFunc} = require("../db/celcom/statsQueries");
-const {cache12h, cache} = require("../middleware/redisCache");
+const {cache12h, cache, cache15m} = require("../middleware/redisCache");
 const pgDbGeo = require("../db/pgQueriesGeo");
 const {getCells, getClusters} = require("../db/celcom/celcomGeoQueries");
 const {getReportsPendingHQReview, reviewReport, getReportsBulkApproved} = require("../db/celcom/MySQLQueries");
+const pgDb = require("../db/PostgresQueries");
+const {getTabulatorDataMySql} = require("../db/MySQLQueries");
 
 router.use(auth('celcom'));
 router.locals = {
@@ -90,5 +92,32 @@ router.get('/ssoReportsBulkApproved', asyncHandler(getReportsBulkApproved));
 
 router.put('/ssoReportsBulkApproved', asyncHandler(reviewReport('multiple')));
 
+// router.post('/upload-test-file', asyncHandler(async (req, res) => {
+//         if (!req.files) {
+//             return res.status(501).json({
+//                 status: false,
+//                 message: 'No file uploaded'
+//             });
+//         } else {
+//             //Use the name of the input field (i.e. "testFile") to retrieve the uploaded file
+//             let testFile = req.files.test;
+//
+//             //Use the mv() method to place the file in upload directory (i.e. "uploads")
+//             testFile.mv(fileRepo.celcom + '/' + testFile.name);
+//
+//             //send response
+//             return res.status(200).json({
+//                 status: true,
+//                 message: 'File is uploaded',
+//                 data: {
+//                     name: testFile.name,
+//                     mimetype: testFile.mimetype,
+//                     size: testFile.size
+//                 }
+//             });
+//         }
+//     }));
+router.get('/tabulatorData', cache15m,
+    asyncHandler(getTabulatorDataMySql('celcom')));
 
 module.exports = router;

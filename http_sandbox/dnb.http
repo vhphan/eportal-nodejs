@@ -243,7 +243,7 @@ Accept: application/json
 
 
 ###
-GET http://localhost:3001/node/dnb/v3/cellListNR?version=1.5
+GET http://localhost:3001/node/dnb/v3/cellsList?version=1.5
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
@@ -258,3 +258,107 @@ API: {{apiKey}}
 Accept: application/json
 
 
+
+###
+GET https://api.eprojecttrackers.com/node/dnb/v3/networkDailyNR?version=1.5
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+###
+GET https://api.eprojecttrackers.com/node/dnb/
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+###
+POST http://localhost:3001/node/celcom/upload-test-file
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+
+
+###
+POST https://api.eprojecttrackers.com/node/celcom/upload-test-file
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="data.json"
+Content-Type: application/json
+
+
+###
+POST http://localhost:3001/node/celcom/upload-test-file
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+###
+POST https://api.eprojecttrackers.com/node/celcom/upload-test-file
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+###
+GET https://ndo-portal.eprojecttrackers.com/check_user.php
+X-Requested-With: XMLHttpRequest
+Api: {{apiKey}}
+Accept: application/json
+
+
+###
+GET https://api.eprojecttrackers.com/node/dnb/v3/plmnDailyNR?version=1.6&format=csv
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+
+
+###
+GET http://localhost:3001/node/dnb/v3/networkHourlyNR?version=1.6
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+
+
+#
+###
+GET http://localhost:3001/node/dnb/v3/statsForCustomCellsListLTEHourly?cells[]=DBPET1069_L7_0030&cells[]=DSPNP1013_L7_0010&cells[]=DBKLG0326_L7_0020&cells[]=DAKIN0275_L7_0020&cells[]=DAKIN0171_L7_0130&version=1.6
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+
+
+#
+
+
+#
+###
+GET http://localhost:3001/node/dnb/v3/statsForCustomCellsListLTEHourly?cells[]=DJJBR0402_L7_0030&cells[]=DQKCH0251_L7_0110&cells[]=DBULG1723_L7_0010&cells[]=DMMKT0094_L7_0010&cells[]=DSBKI0272_L7_0030&version=1.6
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+
+
+#
