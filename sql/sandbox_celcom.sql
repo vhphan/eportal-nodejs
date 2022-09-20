@@ -48,12 +48,7 @@ LIMIT 10;
 
 
 SET SEARCH_PATH TO stats, public;
-CREATE TRIGGER new_data
-AFTER INSERT
-ON stats.gsm_aggregates_week_columns
-    REFERENCING NEW TABLE AS new_table
-FOR EACH STATEMENT
-EXECUTE PROCEDURE notify_new_data();
+
 
 
 create or replace function update_history() returns trigger
@@ -97,3 +92,13 @@ ON stats.test_data
 EXECUTE PROCEDURE update_history();
 
 SELECT * FROM information_schema.columns WHERE table_name = 'gsm_aggregates_columns';
+
+
+
+
+CREATE TRIGGER new_data2
+AFTER UPDATE
+ON celcom.stats.lte_aggregates_week
+    REFERENCING NEW TABLE AS new_table
+FOR EACH STATEMENT
+EXECUTE PROCEDURE celcom.stats.notify_new_data();

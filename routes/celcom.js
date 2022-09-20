@@ -6,7 +6,7 @@ const asyncHandler = require("../middleware/async");
 const PostgresBackend = require("../db/PostgresBackend");
 const {createListeners, createListener, sendEmail} = require("../db/utils");
 const sql = require("../db/celcom/PgJsBackend");
-const {arrayToCsv, gMap} = require("./utils");
+const {arrayToCsv, gMap, getFolderContents, downloadZipFile} = require("./utils");
 const {excelTestFunc} = require("../db/celcom/statsQueries");
 const {cache12h, cache, cache15m} = require("../middleware/redisCache");
 const pgDbGeo = require("../db/pgQueriesGeo");
@@ -119,5 +119,18 @@ router.put('/ssoReportsBulkApproved', asyncHandler(reviewReport('multiple')));
 //     }));
 router.get('/tabulatorData', cache15m,
     asyncHandler(getTabulatorDataMySql('celcom')));
+
+router.get('/statsFiles', asyncHandler(async (req, res) => {
+    const files = getFolderContents('/home2/eproject/celcom/stats_files');
+    const filesWithLinks = files.map(file => ({
+        ...file,
+        link: `https://api.eprojecttrackers.com/node/celcom/statsFiles/${file.name}`
+    }))
+    return res.json(filesWithLinks);
+}));
+
+router.get('/statsFiles/:fileName', asyncHandler(
+    downloadZipFile('celcom', 'stats_files')
+));
 
 module.exports = router;

@@ -204,7 +204,7 @@ Accept: application/json
 
 
 ###
-GET http://localhost:3001/node/dnb/v3/plmnDailyNR
+GET http://localhost:3001/node/dnb/v3/plmnDailyLTE
 X-Requested-With: XMLHttpRequest
 API: {{apiKey}}
 Accept: application/json
@@ -344,12 +344,6 @@ Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmP
 Content-Type: application/json
 
 
-
-
-#
-
-
-#
 ###
 GET http://localhost:3001/node/dnb/v3/statsForCustomCellsListLTEHourly?cells[]=DJJBR0402_L7_0030&cells[]=DQKCH0251_L7_0110&cells[]=DBULG1723_L7_0010&cells[]=DMMKT0094_L7_0010&cells[]=DSBKI0272_L7_0030&version=1.6
 X-Requested-With: XMLHttpRequest
@@ -359,6 +353,3 @@ Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmP
 Content-Type: application/json
 
 
-
-
-#

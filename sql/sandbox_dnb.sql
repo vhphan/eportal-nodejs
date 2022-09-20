@@ -1,5 +1,5 @@
 Select current_database();
-SET search_path = stats, public;
+SET search_path = stats_v3_hourly, public;
 
 create or replace function notify_new_data() returns trigger
     language plpgsql
@@ -11,6 +11,30 @@ BEGIN
     RETURN null;
 END;
 $$;
+
+CREATE TRIGGER new_data
+AFTER INSERT
+ON stats_v3_hourly."NRCELLCU"
+    REFERENCING NEW TABLE AS new_table
+FOR EACH STATEMENT
+EXECUTE PROCEDURE notify_new_data();
+
+
+CREATE TRIGGER new_data
+AFTER INSERT
+ON stats_v3_hourly."EUTRANCELLFDD"
+    REFERENCING NEW TABLE AS new_table
+FOR EACH STATEMENT
+EXECUTE PROCEDURE notify_new_data();
+
+
+CREATE TRIGGER new_data
+AFTER INSERT
+ON stats_v3_hourly.test_data
+    REFERENCING NEW TABLE AS new_table
+FOR EACH STATEMENT
+EXECUTE PROCEDURE notify_new_data();
+
 
 create table logging.history
 (

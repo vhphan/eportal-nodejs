@@ -1261,8 +1261,6 @@ const networkDailyPlmnStatsLTE = async (request, response) => {
        tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
         WHERE tt1."Region" = 'All'
-          and "Max of RRC Connected User"
-            > 0
         ORDER BY time, tt1.id;
     `;
     return sendResults(request, response, results);

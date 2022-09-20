@@ -1093,11 +1093,9 @@ const networkHourlyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
         SELECT tt1.date_id::varchar(19) as time,
        tt1.mobile_operator as object,
-       tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
+       ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
         WHERE tt1."Region" = 'All'
-          and "Max of RRC Connected User"
-            > 0
         ORDER BY time, tt1.id;
     `;
     return sendResults(request, response, results);

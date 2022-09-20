@@ -10,9 +10,9 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     let {page, size} = request.query;
     [page, size] = [parseInt(page), parseInt(size)];
     const offset = size * (page - 1);
+
     let filterArray = [];
     let filterValues = [];
-    let i = 1;
     if (filters) {
         filterArray = filters.map(f => {
             if (typeof f['value'] === "object") {
@@ -44,6 +44,7 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     if (sorters) {
         sorterArray = sorters.map(s => `\`${s['field']}\` ${s['dir']}`)
     }
+
     const sorterString = sorterArray.length ? ` Order By ${sorterArray.join(', ')}` : '';
     const filterString = filterArray.length ? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
 
