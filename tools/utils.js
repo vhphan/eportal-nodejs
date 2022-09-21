@@ -19,11 +19,11 @@ function createWatcherProcess() {
     logger.info("start watching");
     const spawn = require('child_process').spawn;
 
-    const watcher1 = spawn('node', ['./tools/celcomEdbWatcher.js']);
-    logWatcher(watcher1);
-
-    const watcher2 = spawn('node', ['./tools/dnb/netanDataDnbWatcher.js']);
-    logWatcher(watcher2);
+    // const watcher1 = spawn('node', ['./tools/celcomEdbWatcher.js']);
+    // logWatcher(watcher1);
+    //
+    // const watcher2 = spawn('node', ['./tools/dnb/netanDataDnbWatcher.js']);
+    // logWatcher(watcher2);
 }
 
 const renameProp = (

@@ -1,6 +1,7 @@
 const needle = require("needle");
 const fs = require('fs');
 const path = require('path');
+const {logger} = require("../middleware/logger");
 const gMapUrl = `https://maps.googleapis.com/maps/api/js`
 
 const arrayToCsv = (results, parseDate = true, dateColumns = 'Date', replaceNull = null) => {
@@ -63,6 +64,7 @@ function gMap() {
     };
 }
 
+
 const getFolderContents = (pathToFolder) => {
     // Get folder contents and return filename and size in Megabytes and date modified in json format
     const files = fs.readdirSync(pathToFolder);
@@ -71,7 +73,7 @@ const getFolderContents = (pathToFolder) => {
         return {
             name: file,
             size: stats.size / 1000000.0,
-            date: stats.mtime,
+            date: stats.mtime.toLocaleString(),
             parentFolder: pathToFolder.split(path.sep).pop(),
         }
     });
@@ -84,6 +86,7 @@ const downloadZipFile = (operator, folderName) => (req, res) => {
     res.download(zipPath, fileName, (err) => {
         if (err) {
             console.log(err);
+            logger.error(err);
         } else {
             console.log('File downloaded successfully');
         }

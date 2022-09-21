@@ -65,7 +65,7 @@ function gsmDataCallBack(evt, name, dir) {
 
 
 // Celcom my edb /home/eproject/public_html/cmeportal/Myedb/Myedb/*.rar
-watchFolder('/home/eproject/public_html/cmeportal/Myedb/Myedb', edbCallBack);
+// watchFolder('/home/eproject/public_html/cmeportal/Myedb/Myedb', edbCallBack);
 
 // watchFolder('/home/eproject/eproject_bo/v3', lteDataCallBack);
 // watchFolder('/home/eproject/eproject_bo/2G_v2', gsmDataCallBack);
