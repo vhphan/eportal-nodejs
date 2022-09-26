@@ -116,7 +116,8 @@ const plmnKpiList = {
         'UL 64QAM%',
         'UL 256QAM%',
         'E-RAB Setup Success Rate_non-GBR (%)',
-        'Max of RRC Connected User'
+        'Max of RRC Connected User',
+        'Interfreq HOSR',
     ],
 }
 //

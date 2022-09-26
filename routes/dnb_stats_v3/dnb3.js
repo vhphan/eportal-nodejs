@@ -43,7 +43,8 @@ const {
     customCellListHourlyStatsNR,
     customCellListHourlyStatsNR2,
     customCellListHourlyStatsLTE,
-    networkHourlyPlmnStatsNR, networkHourlyPlmnStatsLTE
+    networkHourlyPlmnStatsNR, networkHourlyPlmnStatsLTE, clusterHourlyPlmnStatsNR, cellHourlyPlmnStatsNR,
+    clusterHourlyPlmnStatsLTE, cellHourlyPlmnStatsLTE
 } = require("../../db/pgjs/HourlyQueriesStatsV3");
 
 const router = express.Router();
@@ -102,6 +103,11 @@ router.get('/statsForCustomCellsListNR2Hourly', asyncHandler(customCellListHourl
 router.get('/statsForCustomCellsListLTEHourly', asyncHandler(customCellListHourlyStatsLTE))
 
 router.get(['/networkHourlyPlmnNR', '/plmnHourlyNR'], cache15m, asyncHandler(networkHourlyPlmnStatsNR));
+router.get('/clusterHourlyPlmnNR', cache15m, asyncHandler(clusterHourlyPlmnStatsNR));
+router.get(['/cellHourlyPlmnNR', '/plmnHourlyCellNR'], cache15m, asyncHandler(cellHourlyPlmnStatsNR));
+
 router.get(['/networkHourlyPlmnLTE', '/plmnHourlyLTE'], cache15m, asyncHandler(networkHourlyPlmnStatsLTE));
+router.get('/clusterHourlyPlmnLTE', cache15m, asyncHandler(clusterHourlyPlmnStatsLTE));
+router.get(['/cellHourlyPlmnLTE', '/plmnHourlyCellLTE'], cache15m, asyncHandler(cellHourlyPlmnStatsLTE));
 
 module.exports = router;

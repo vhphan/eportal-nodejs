@@ -2,14 +2,14 @@ const MySQLBackend = require("../../db/MySQLBackend");
 const {getCacheKeyValue} = require("../RedisBackend");
 const {logger} = require("../../middleware/logger");
 const {getUser} = require("../../auth");
+const {getSqlResults} = require("./utils");
 
 // const mysql = new MySQLBackend('celcom');
 const mysql = new MySQLBackend('celcom_test');
 
-const getReportsPendingHQReview = async (request, response) => {
 
-    const [rows, fields] = await mysql.query(
-        `
+const getReportsPendingHQReview = async (request, response) => {
+    const sqlQuery = `
                     SELECT a.SiteInfoID,
                     a.ReportID,
                     d.Region,
@@ -63,16 +63,10 @@ const getReportsPendingHQReview = async (request, response) => {
                     AND a.\`Regional Review Status\` = 'Regional Approved'
                     AND \`Submission Date\` like '2022%'
                     ORDER BY ReportId;
-        `
-    );
+        `;
     const user = JSON.parse(await getUser());
-    response.json({
-        success: true,
-        data: rows,
-        fields: fields.map(field => field.name),
-        user
-    });
-
+    const results = await getSqlResults(mysql, sqlQuery);
+    response.status(200).json({...results, user});
 }
 
 const getReportsBulkApproved = async (request, response) => {
@@ -133,7 +127,6 @@ const getReportsBulkApproved = async (request, response) => {
     );
 }
 
-
 async function reviewSingleReport(request, response, status, userName) {
     const {reportId} = request.params;
     if (!reportId) {
@@ -158,7 +151,8 @@ async function reviewSingleReport(request, response, status, userName) {
         const reviewDate = new Date().toISOString().slice(0, 10);
         const [rows2, fields2] = await mysql.query(
             `
-                INSERT INTO eproject_cm_sb.tblreview (\`ReportId\`, \`Reviewed By\`, \`Review Date\`, \`Comment\`, \`Status\`)
+                INSERT INTO eproject_cm_sb.tblreview (\` ReportId \`, \` Reviewed By \`, \` Review Date \`, \` Comment
+                                                      \`, \` Status \`)
                 VALUES (?, ?, ?, ?, ?)
             `,
             [reportId, userName, reviewDate, 'bulk approve', status]
@@ -243,8 +237,10 @@ async function reviewMultipleReports(request, response, status, userName) {
         const params = reportIds.map(reportId => [reportId, userName, reviewDate, 'bulk approve', status]);
         const [rows2, fields2] = await mysql.query(
             `
-                INSERT INTO eproject_cm_sb.tblreview (\`ReportId\`, \`Reviewed By\`, \`Review Date\`, \`Comment\`, \`Status\`)
-                VALUES ?
+                INSERT INTO eproject_cm_sb.tblreview (\` ReportId \`, \` Reviewed By \`, \` Review Date \`, \` Comment
+                                                      \`, \` Status \`)
+                VALUES
+                ?
             `,
             [params]
         );

@@ -15,7 +15,7 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     let filterValues = [];
     if (filters) {
         filterArray = filters.map(f => {
-            if (typeof f['value'] === "object") {
+            if (typeof f['value'] === "object" && f['type'] !== "in") {
                 if ('start' in f['value']) {
                     return `${table}.\`${f['field']}\` >= ?`;
                 }
@@ -24,10 +24,15 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
                 }
                 return;
             }
+            if (f['type'] === "in") {
+                return `${table}.\`${f['field']}\` IN (?)`;
+            }
             return `${table}.\`${f['field']}\` ${f['type']} ?`;
         })
+
+
         filterValues = filters.map(f => {
-            if (typeof f['value'] === "object") {
+            if (typeof f['value'] === "object" && f['type'] !== "in") {
                 if ('start' in f['value']) {
                     return f['value']['start'];
                 }
@@ -35,6 +40,9 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
                     return f['value']['end'];
                 }
                 return;
+            }
+            if (f['type'] === "in") {
+                return f['value'];
             }
             return `%${f['value']}%`;
         })
@@ -47,7 +55,8 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
 
     const sorterString = sorterArray.length ? ` Order By ${sorterArray.join(', ')}` : '';
     const filterString = filterArray.length ? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
-
+    logger.info(`filterString: ${filterString}`);
+    logger.info(`filterValues: ${filterValues}`);
     const sql = `SELECT *
                  FROM ${schema}.${table}
                    ${filterString}

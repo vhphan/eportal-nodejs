@@ -98,5 +98,4 @@ module.exports = {
     gMap,
     getFolderContents,
     downloadZipFile
-
 }

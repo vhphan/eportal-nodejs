@@ -3,6 +3,7 @@ const {arrayToCsv} = require("../../routes/utils");
 const {logger} = require("../../middleware/logger");
 const {networkKpiList, plmnKpiList} = require("../constants");
 const {response} = require("express");
+const {getClusterId, getCellId} = require("./utils");
 
 
 const resultsAsExcelFormat = (results, {parseDate = false, dateColumns = []}) => async (request, response) => {
@@ -1214,7 +1215,7 @@ const regionDailyPlmnStatsNR = async (request, response) => {
 };
 
 const clusterDailyPlmnStatsNR = async (request, response) => {
-    const clusterId = request.query.clusterId || request.params.clusterId || '%';
+    const clusterId = getClusterId(request);
     const results = await sql`
         SELECT tt1.date_id as time,
                        tt1.mobile_operator as object,
@@ -1232,7 +1233,7 @@ const clusterDailyPlmnStatsNR = async (request, response) => {
 };
 
 const cellDailyPlmnStatsNR = async (request, response) => {
-    const cellId = request.query.cellId || request.params.cellId || request.query.object || request.params.object;
+    const cellId = getCellId(request);
     if (!cellId) {
         response.status(400).json({
             success: false, message: "cellId is required"
@@ -1256,27 +1257,31 @@ const cellDailyPlmnStatsNR = async (request, response) => {
 
 const networkDailyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
-        SELECT tt1.date_id::varchar(10) as time,
-       tt1.mobile_operator as object,
-       tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
-        FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
-        WHERE tt1."Region" = 'All'
-        ORDER BY time, tt1.id;
+            SELECT tt1.date_id::varchar(10) as time,
+            tt1.mobile_operator as object,
+            tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
+            FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
+            LEFT JOIN dnb.stats_v3.eutrancellrelation_plmn_kpi_view as tt2
+            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            WHERE tt1."Region" = 'All'
+            ORDER BY time, tt1.id;
     `;
     return sendResults(request, response, results);
 };
 
 const regionDailyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
-        SELECT tt1.date_id::varchar(10) as time,
-       tt1.mobile_operator as object,
-       tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
-        FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
-        WHERE tt1."Region" <> 'All'
-          and tt1."MCMC_State" = 'All'
-          and tt1."DISTRICT" = 'All'
-          and tt1."Cluster_ID" = 'All'
-        ORDER BY tt1."Region", tt1.date_id
+            SELECT tt1.date_id::varchar(10) as time,
+            tt1.mobile_operator as object,
+            tt1.mobile_operator, ${sql(plmnKpiList.LTE)}
+            FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
+            LEFT JOIN dnb.stats_v3.eutrancellrelation_plmn_kpi_view as tt2
+            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            WHERE tt1."Region" <> 'All'
+            and tt1."MCMC_State" = 'All'
+            and tt1."DISTRICT" = 'All'
+            and tt1."Cluster_ID" = 'All'
+            ORDER BY tt1."Region", tt1.date_id
     `;
     return sendResults(request, response, results);
 };
@@ -1285,11 +1290,13 @@ const clusterDailyPlmnStatsLTE = async (request, response) => {
     const clusterId = request.query.clusterId || request.params.clusterId || '%';
     const results = await sql`
         SELECT tt1.date_id::varchar(10) as time,
-       tt1.mobile_operator as object,
-       ${sql(plmnKpiList.LTE)}
+        tt1.mobile_operator as object,
+        ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.eutrancellfddflex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3.eutrancellrelation_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
         WHERE tt1."Cluster_ID" <> 'All'
-          and tt1."Cluster_ID" LIKE ${clusterId}
+        and tt1."Cluster_ID" LIKE ${clusterId}
         ORDER BY tt1."Cluster_ID", tt1.date_id
     `;
     return sendResults(request, response, results);
@@ -1305,9 +1312,11 @@ const cellDailyPlmnStatsLTE = async (request, response) => {
     }
     const results = await sql`
         SELECT tt1.date_id::varchar(10) as time,
-               tt1.mobile_operator as object,
-           ${sql(plmnKpiList.LTE)}
+        tt1.mobile_operator as object,
+        ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3.tbl_cell_eutrancellfddflex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3.eutrancellrelation_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
         WHERE tt1.eutrancellfdd = ${cellId}
         ORDER BY time;
     `;

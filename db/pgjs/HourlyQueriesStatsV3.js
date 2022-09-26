@@ -3,6 +3,7 @@ const {arrayToCsv} = require("../../routes/utils");
 const {logger} = require("../../middleware/logger");
 const {networkKpiList, plmnKpiList} = require("../constants");
 const {sendResults} = require("./DailyQueriesStatsV3");
+const {getCellId, getClusterId} = require("./utils");
 
 
 const networkHourlyStatsNR = async (req, res) => {
@@ -1073,7 +1074,6 @@ const customCellListHourlyStatsLTE = async (request, response) => {
 }
 
 
-
 const networkHourlyPlmnStatsNR = async (request, response) => {
     const results = await sql`
         SELECT tt1.date_id::varchar(19) as time,
@@ -1084,22 +1084,102 @@ const networkHourlyPlmnStatsNR = async (request, response) => {
         LEFT JOIN dnb.stats_v3_hourly.nrcelldu_flex_plmn_kpi_view as tt2
         USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
         WHERE tt1."Region" = 'All'
-        ORDER BY time, tt1.id;
+        ORDER BY time;
     `;
     return sendResults(request, response, results);
 };
 
-const networkHourlyPlmnStatsLTE = async (request, response) => {
+const clusterHourlyPlmnStatsNR = async (request, response) => {
+    const clusterId = getClusterId(request);
     const results = await sql`
-        SELECT tt1.date_id::varchar(19) as time,
-       tt1.mobile_operator as object,
-       ${sql(plmnKpiList.LTE)}
-        FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
-        WHERE tt1."Region" = 'All'
-        ORDER BY time, tt1.id;
+        SELECT tt1.date_id as time,
+                       tt1.mobile_operator as object,
+                       tt1.flex_filtername,
+                       tt2.flex_filtername, ${sql(plmnKpiList.NR)}
+        FROM dnb.stats_v3_hourly.nrcellcu_flex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3_hourly.nrcelldu_flex_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
+        WHERE tt1."Cluster_ID" <> 'All'
+          AND tt1."Cluster_ID" LIKE ${clusterId}
+        ORDER BY tt1."Cluster_ID", tt1.date_id;
+        ORDER BY time;
     `;
     return sendResults(request, response, results);
 };
+
+const cellHourlyPlmnStatsNR = async (request, response) => {
+    const cellId = getCellId(request);
+    if (!cellId) {
+        response.status(400).json({
+            success: false, message: "cellId is required"
+        });
+        return;
+    }
+    const results = await sql`
+    SELECT tt1.date_id::varchar(10) as time,
+       tt1.mobile_operator as object,
+       ${sql(plmnKpiList.NR)}
+       FROM dnb.stats_v3_hourly.tbl_cell_nrcellcu_flex_plmn_kpi as tt1
+       LEFT JOIN dnb.stats_v3_hourly.tbl_cell_nrcelldu_flex_plmn_kpi as tt2
+         on tt1.date_id = tt2.date_id
+       and tt1.mobile_operator = tt2.mobile_operator
+       and tt1.nrcellcu = tt2.nrcelldu
+       WHERE tt1.nrcellcu = ${cellId}
+            ORDER BY time;
+    `;
+    return sendResults(request, response, results);
+}
+
+const networkHourlyPlmnStatsLTE = async (request, response) => {
+    const results = await sql`
+            SELECT tt1.date_id::varchar(19) as time,
+            tt1.mobile_operator as object,
+            ${sql(plmnKpiList.LTE)}
+            FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
+            LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
+            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            WHERE tt1."Region" = 'All'
+            ORDER BY time;
+    `;
+    return sendResults(request, response, results);
+};
+
+const clusterHourlyPlmnStatsLTE = async (request, response) => {
+    const clusterId = getClusterId(request);
+    const results = await sql`
+            SELECT tt1.date_id::varchar(19) as time,
+            tt1."Cluster_ID" as object,
+            ${sql(plmnKpiList.LTE)}
+            FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
+            LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
+            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            WHERE tt1."Cluster_ID" <> 'All'
+            and tt1."Cluster_ID" LIKE ${clusterId}
+            ORDER BY tt1."Cluster_ID", tt1.date_id
+    `;
+    return sendResults(request, response, results);
+}
+
+const cellHourlyPlmnStatsLTE = async (request, response) => {
+    const cellId = getCellId(request);
+    if (!cellId) {
+        response.status(400).json({
+            success: false, message: "cellId is required"
+        });
+        return;
+    }
+    const results = await sql`
+        SELECT tt1.date_id::varchar(10) as time,
+        tt1.mobile_operator as object,
+        ${sql(plmnKpiList.LTE)}
+        FROM dnb.stats_v3_hourly.tbl_cell_eutrancellfddflex_plmn_kpi_view as tt1
+        LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
+        USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+        WHERE tt1.eutrancellfdd = ${cellId}
+        ORDER BY time;
+    `;
+    return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
+}
 
 module.exports = {
     networkHourlyStatsNR,
@@ -1116,5 +1196,10 @@ module.exports = {
     customCellListHourlyStatsLTE,
 
     networkHourlyPlmnStatsNR,
+    clusterHourlyPlmnStatsNR,
+    cellHourlyPlmnStatsNR,
+    
     networkHourlyPlmnStatsLTE,
+    clusterHourlyPlmnStatsLTE,
+    cellHourlyPlmnStatsLTE,
 };
