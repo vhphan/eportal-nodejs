@@ -749,8 +749,29 @@ const getGroupedCellsStats = (tech, reqType) => async (request, response) => {
 
 }
 
+const getClusters = async (request, response) => {
+    const clusters = await sql`
+            SELECT * FROM celcom.stats.cbo_nc_mapping;
+            `;
+    response.status(200).json({
+        success: true,
+        data: clusters
+    })
+}
+
+const roundJSONValues = (arrayOfObjs, decimalPlaces) => {
+    return arrayOfObjs.map(d=>{
+        Object.keys(d).forEach(k=>{
+            if(typeof d[k] === 'number'){
+                d[k] = Math.round(d[k] * (10 ** decimalPlaces)) / (10 ** decimalPlaces);
+            }
+        })
+        return d
+    })
+}
+
 const getClusterStats = (tech) => async (request, response) => {
-    const {clusterId} = request.query;
+    const {clusterId} = request.query || request.params;
     const layerColumn = tech.toLowerCase() === 'lte' ? 'Layer' : 'SystemID';
     const table = `celcom.stats.${tech.toLowerCase()}_aggregates`;
     const results = await sql`
@@ -759,16 +780,18 @@ const getClusterStats = (tech) => async (request, response) => {
         ${sql(layerColumn)} as "object",
        *
     FROM ${sql(table)} 
-    WHERE "Net_Cluster_Code"=${clusterId}
+    WHERE "Net_Cluster_Code" IN ${sql(clusterId)}
     ORDER BY "Date"
     `;
     results.forEach(d => {
         d['Date'] = d['Date'].toISOString().split('T')[0];
         d[layerColumn] = d[layerColumn] === null ? 'All' : d[layerColumn];
     });
+    const data = results.map(result => renameProps(result, ["Date", layerColumn], ['time', 'object']));
+    const roundedData = roundJSONValues(data, 4);
     response.status(200).json({
         success: true,
-        data: results.map(result => renameProps(result, ["Date", layerColumn], ['time', 'object']))
+        data: roundedData
     });
 }
 
@@ -1524,5 +1547,6 @@ module.exports = {
     getCellMapping,
     getGroupedCellsStats,
     excelTestFunc,
-    getClusterStats
+    getClusterStats,
+    getClusters,
 };

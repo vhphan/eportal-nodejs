@@ -68,7 +68,7 @@ router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('A
 
 router.get('/gsm-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('GSM')));
 router.get('/lte-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('LTE')));
-
+router.get('/clusters', asyncHandler(statsQueries.getClusters));
 
 router.get('/googleMap', cache('2 minutes'), gMap())
 router.post('/testExcel', asyncHandler(excelTestFunc));
