@@ -308,11 +308,11 @@ FROM stats."FexEutrancellFDDDailyPLMN"
                 GROUP BY "ERBS" ORDER BY "ERBS";`,
 
     cellListLTE: `
-        SELECT * FROM dnb.stats.cell_list_lte WHERE object ilike $1 ORDER BY object;
+        SELECT * FROM dnb.stats_v3.cell_list_lte WHERE object ilike $1 ORDER BY object;
     `,
 
     cellListNR: `
-        SELECT * FROM dnb.stats.cell_list_nr WHERE object ilike $1 ORDER BY object;
+        SELECT * FROM dnb.stats_v3.cell_list_nr WHERE object ilike $1 ORDER BY object;
     `,
 
     dailySiteNR: `

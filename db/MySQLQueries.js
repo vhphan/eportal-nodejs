@@ -1,12 +1,43 @@
 const MySQLBackend = require("../db/MySQLBackend");
 const {logger} = require("../middleware/logger");
+const {json2csvAsync} = require("json-2-csv");
+const fs = require("fs");
 
 const mysqlCelcom = new MySQLBackend('celcom');
 const mysqlDnb = new MySQLBackend('dnb');
+const mysqlDbMap = {
+    'celcom': mysqlCelcom,
+    'dnb': mysqlDnb
+}
 
+const downloadFoldersMap = {
+    'celcom': '/home/eproject/celcom_files/downloads',
+    'dnb': '/home/eproject/dnb/dnb_file_repo/downloads',
+    'dev': "C:\\Temp"
+}
+
+async function downloadQueryAsFile(response, sql, operator, filterValues) {
+    const db = mysqlDbMap[operator];
+    await db.connect();
+    const pool = db.pool;
+    const result = await pool.query(sql, [...filterValues]);
+    const folderToUse = process.env.NODE_ENV === 'development'? downloadFoldersMap['dev']: downloadFoldersMap[operator];
+    json2csvAsync(result[0])
+    .then((csv) => {
+        const downloadFileName = `download_${Date.now()}.csv`;
+        const fileName = `${folderToUse}/${downloadFileName}`;
+        fs.writeFile(fileName, csv, (err) => {
+            if (err) {
+                logger.error(err);
+                throw err;
+            }
+            response.download(fileName, downloadFileName);
+        });
+    })
+}
 
 const getTabulatorDataMySql = (operator) => async (request, response, next) => {
-    const {schema, boolOperand, table, filters, sorters} = request.query;
+    const {schema, boolOperand, table, filters, sorters, download} = request.query;
     let {page, size} = request.query;
     [page, size] = [parseInt(page), parseInt(size)];
     const offset = size * (page - 1);
@@ -29,8 +60,6 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
             }
             return `${table}.\`${f['field']}\` ${f['type']} ?`;
         })
-
-
         filterValues = filters.map(f => {
             if (typeof f['value'] === "object" && f['type'] !== "in") {
                 if ('start' in f['value']) {
@@ -57,19 +86,25 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     const filterString = filterArray.length ? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
     logger.info(`filterString: ${filterString}`);
     logger.info(`filterValues: ${filterValues}`);
-    const sql = `SELECT *
-                 FROM ${schema}.${table}
-                   ${filterString}
-                   ${sorterString}
-                 LIMIT ? OFFSET ?`;
 
+    let sql = `
+                SELECT *
+                FROM ${schema}.${table}
+                ${filterString}
+                ${sorterString}
+                `;
+    if (download) {
+        await downloadQueryAsFile(response, sql, operator, filterValues);
+        return;
+    }
+    sql += `LIMIT ? OFFSET ?`;
     logger.info(sql);
     logger.info([...filterValues, size, offset])
     const sqlCount = `SELECT Count(*) as count FROM ${schema}.${table} ${filterString};`;
     logger.info(sqlCount);
     try {
 
-        const db = operator === 'dnb' ? mysqlDnb : mysqlCelcom;
+        const db = mysqlDbMap[operator];
         await db.connect();
         const pool = db.pool;
         const result = await pool.query(sql, [...filterValues, size, offset]);
@@ -83,7 +118,6 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     } catch (e) {
         next(e);
     }
-
 }
 
 module.exports = {

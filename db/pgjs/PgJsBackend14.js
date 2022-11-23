@@ -1,14 +1,11 @@
-// postgres backend using postgres.js
-
-
 const postgres = require('postgres');
 
 const sql = postgres({
     host: 'localhost',
-    port: 6543,
+    port: 5433,
     database: 'dnb',
-    username: process.env.PGDB_USER,
-    password: process.env.PGDB_PASS,
+    username: process.env.PGDB14_USER_DNB,
+    password: process.env.PGDB14_PASS_DNB,
 })
 
 module.exports = sql

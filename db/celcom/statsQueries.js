@@ -760,9 +760,9 @@ const getClusters = async (request, response) => {
 }
 
 const roundJSONValues = (arrayOfObjs, decimalPlaces) => {
-    return arrayOfObjs.map(d=>{
-        Object.keys(d).forEach(k=>{
-            if(typeof d[k] === 'number'){
+    return arrayOfObjs.map(d => {
+        Object.keys(d).forEach(k => {
+            if (typeof d[k] === 'number') {
                 d[k] = Math.round(d[k] * (10 ** decimalPlaces)) / (10 ** decimalPlaces);
             }
         })
@@ -1540,6 +1540,16 @@ async function excelTestFunc(request, response) {
     );
 }
 
+async function getCellsList(request, response) {
+    const {tech, region} = request.params;
+    const table = tech === 'LTE' ? 'celcom.stats.cell_mapping' : 'celcom.stats.cell_mapping_gsm';
+    const cells = await sql`SELECT "CELLname" as cell, "Net_Cluster_Code" as "clusterId", "SystemID" as tech FROM ${sql(table)} WHERE "Region" = ${region}`;
+    response.status(200).json({
+        success: true,
+        data: cells,
+    });
+}
+
 module.exports = {
     getAggregatedStats,
     getAggregatedStatsWeek,
@@ -1549,4 +1559,5 @@ module.exports = {
     excelTestFunc,
     getClusterStats,
     getClusters,
+    getCellsList,
 };

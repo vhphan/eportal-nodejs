@@ -18,6 +18,7 @@ const cache30m = cacheWithRedis('30 minutes', onlyStatus200);
 const cache2h = cacheWithRedis('2 hours', onlyStatus200);
 const cache6h = cacheWithRedis('6 hours', onlyStatus200);
 const cache12h = cacheWithRedis('12 hours', onlyStatus200);
+const cache24h = cacheWithRedis('24 hours', onlyStatus200);
 
 module.exports = {
     cache,
@@ -26,6 +27,7 @@ module.exports = {
     cache30m,
     cache2h,
     cache12h,
+    cache24h,
     cache6h,
     redisClient,
     cacheWithRedis

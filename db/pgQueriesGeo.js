@@ -56,7 +56,7 @@ const getCells = async (request, response) => {
                            )
                    ) as f
         FROM ${sql(tableName)} as cells
-                 INNER JOIN dnb.stats.cells_in_stats as cell_info
+                 INNER JOIN dnb.stats_v3.cells_in_stats as cell_info
                    on cells."Cellname" = cell_info."object"
         WHERE "Region" like ${region}
         AND "LATITUDE" IS NOT NULL

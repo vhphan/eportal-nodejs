@@ -47,14 +47,14 @@ function gMap() {
                 key: process.env.GOOGLE_KEY,
                 libraries: 'places,visualization,geometries',
                 v: 'quarterly'
-            })
+            });
 
-            const apiRes = await needle('get', `${gMapUrl}?${params}`)
-            const data = apiRes.body
+            const apiRes = await needle('get', `${gMapUrl}?${params}`);
+            const data = apiRes.body;
 
             // Log the request to the public API
             if (process.env.NODE_ENV !== 'production') {
-                console.log(`REQUEST: ${gMapUrl}?${params}`)
+                console.log(`REQUEST: ${gMapUrl}?${params}`);
             }
 
             res.status(200).send(data)
@@ -85,17 +85,46 @@ const downloadZipFile = (operator, folderName) => (req, res) => {
     const zipPath = `/home/eproject/${operator}/${folderName}/${fileName}`;
     res.download(zipPath, fileName, (err) => {
         if (err) {
-            console.log(err);
             logger.error(err);
+            throw err;
         } else {
-            console.log('File downloaded successfully');
+            logger.info(`File ${fileName} downloaded successfully`);
         }
     })
 }
 
+const jsonFileToResponse = (filePath) => (req, res, next) => {
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            logger.error(err);
+            next(err);
+        } else {
+            return res.status(200).send(JSON.parse(data));
+        }
+    });
+}
+
+const testRunPython = (req, res) => {
+    const {arg1, arg2} = req.params;
+    const spawn = require("child_process").spawn;
+    const process = spawn(`cd /home2/eproject/dnb && /home/eproject/anaconda3/envs/dnb/bin/python -m scripts.misc.hello_node.py ${arg1} ${arg2}`,
+        {
+            shell: true
+        });
+    process.stdout.on('data', function (data) {
+        res.send({
+            success: true,
+            data: data.toString()
+        });
+    })
+};
+
 module.exports = {
+
     arrayToCsv,
     gMap,
     getFolderContents,
-    downloadZipFile
+    downloadZipFile,
+    jsonFileToResponse,
+    testRunPython
 }

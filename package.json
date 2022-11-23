@@ -24,6 +24,7 @@
     "express-validator": "^6.14.2",
     "exprss": "0.0.1-security",
     "helmet": "^5.0.2",
+    "json-2-csv": "^3.17.2",
     "knex": "^1.0.2",
     "mysql2": "^2.2.5",
     "needle": "^3.0.0",

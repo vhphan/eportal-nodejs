@@ -30,7 +30,7 @@ const sqlQueries = {
                     'state', "MCMC_State"
                 )
                 ) as f
-                FROM dnb.stats.commercial_polygons`
+                FROM dnb.rfdb.commercial_polygons`
 
 
 }

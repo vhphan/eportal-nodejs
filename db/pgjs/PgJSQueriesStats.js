@@ -1,4 +1,5 @@
 const sql = require('./PgJsBackend');
+const {getCookies} = require("../utils");
 const networkKpiList = {
     "NR": [
         "Cell Availability",
@@ -658,6 +659,16 @@ const clusterHourlyStatsLTE = async (request, response) => {
     response.status(200).json(results);
 }
 
+const updateUserID = async (request, response) => {
+    const userId = getCookies(request)['UserID'] || '';
+    const userName = (request.headers.username || '').replace('+', ' ');
+    const results = await sql`
+    INSERT INTO dnb.stats_v3.dashboard_users (user_id, user_name)
+    VALUES (${userId}, ${userName})
+    `;
+    response.status(200).json(results);
+}
+
 module.exports = {
     customCellListStatsLTE,
     customCellListStatsLTE2,
@@ -667,5 +678,6 @@ module.exports = {
     clusterDailyStatsLTE,
     clusterHourlyStatsNR,
     clusterHourlyStatsLTE,
-    testQuery
+    testQuery,
+    updateUserID
 }

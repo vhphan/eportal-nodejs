@@ -8,7 +8,7 @@ const {createListeners, createListener, sendEmail} = require("../db/utils");
 const sql = require("../db/celcom/PgJsBackend");
 const {arrayToCsv, gMap, getFolderContents, downloadZipFile} = require("./utils");
 const {excelTestFunc} = require("../db/celcom/statsQueries");
-const {cache12h, cache, cache15m} = require("../middleware/redisCache");
+const {cache12h, cache, cache15m, cache24h} = require("../middleware/redisCache");
 const pgDbGeo = require("../db/pgQueriesGeo");
 const {getCells, getClusters} = require("../db/celcom/celcomGeoQueries");
 const {getReportsPendingHQReview, reviewReport, getReportsBulkApproved} = require("../db/celcom/MySQLQueries");
@@ -29,7 +29,7 @@ createListener(client, 'new_data', async (data) => {
     if (['gsm_aggregates_week_columns', 'lte_aggregates_week_columns'].includes(updatedTable)) {
         const tech = updatedTable.substring(0, 4);
         const message = `Aggregation completed for ${tech}`;
-        sendEmail(process.env.CELCOM_EMAILS, `Auto Messaging: Aggregation completed [${tech}]`, message);
+        sendEmail(process.env.NODE_ENV !== 'production'? process.env.CELCOM_EMAILS_DEV: process.env.CELCOM_EMAILS, `Auto Messaging: Aggregation completed [${tech}]`, message);
         return;
     }
 
@@ -38,7 +38,7 @@ createListener(client, 'new_data', async (data) => {
         return;
     }
     7
-    sendEmail(process.env.CELCOM_EMAILS, 'Auto Messaging: New Data Processed', message);
+    sendEmail(process.env.NODE_ENV !== 'production'? process.env.CELCOM_EMAILS_DEV: process.env.CELCOM_EMAILS, 'Auto Messaging: New Data Processed', message);
     router.locals.lastEmailSentAt[updatedTable] = new Date();
 
 });
@@ -66,8 +66,8 @@ router.post('/gsm-stats/groupedCellsDaily', asyncHandler(statsQueries.getGrouped
 router.get('/all-stats/cellMapping', asyncHandler(statsQueries.getCellMapping('ALL')));
 
 
-router.get('/gsm-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('GSM')));
-router.get('/lte-stats/clusterStats', asyncHandler(statsQueries.getClusterStats('LTE')));
+router.get('/gsm-stats/clusterStats', cache15m, asyncHandler(statsQueries.getClusterStats('GSM')));
+router.get('/lte-stats/clusterStats', cache15m, asyncHandler(statsQueries.getClusterStats('LTE')));
 router.get('/clusters', asyncHandler(statsQueries.getClusters));
 
 router.get('/googleMap', cache('2 minutes'), gMap())
@@ -132,5 +132,8 @@ router.get('/statsFiles', asyncHandler(async (req, res) => {
 router.get('/statsFiles/:fileName', asyncHandler(
     downloadZipFile('celcom', 'stats_files')
 ));
+
+router.get('/cells/:tech/:region', cache24h, asyncHandler(statsQueries.getCellsList));
+
 
 module.exports = router;
