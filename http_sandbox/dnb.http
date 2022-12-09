@@ -414,3 +414,21 @@ Accept: application/json
 Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
 Content-Type: application/json
 
+
+###
+GET {{devHost}}/cellCentroid?cellSize=m&cellName=DAKIN0171_L7_0130
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+
+
+###
+GET {{devHost}}/formulas
+X-Requested-With: XMLHttpRequest
+API: {{apiKey}}
+Accept: application/json
+Content-Disposition: form-data; name="data"; filename="C:\Users\eveepha\PycharmProjects\eportal-nodejs\temp\test.txt"
+Content-Type: application/json
+

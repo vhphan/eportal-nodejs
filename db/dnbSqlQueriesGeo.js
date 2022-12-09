@@ -26,8 +26,7 @@ const sqlQueries = {
                 'geometry', ST_AsGeoJSON("geom")::json,
                 'properties', json_build_object(
                     'district', "DISTRICT",
-                    'clusterId', "Cluster_ID",
-                    'state', "MCMC_State"
+                    'clusterId', "Cluster_ID"
                 )
                 ) as f
                 FROM dnb.rfdb.commercial_polygons`

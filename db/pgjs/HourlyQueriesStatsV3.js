@@ -1,4 +1,4 @@
-const sql = require('./PgJsBackend');
+const sql = require('./PgJsBackend14');
 const {arrayToCsv} = require("../../routes/utils");
 const {logger} = require("../../middleware/logger");
 const {networkKpiList, plmnKpiList} = require("../constants");
@@ -12,16 +12,15 @@ const networkHourlyStatsNR = async (req, res) => {
                 'Network' as object, ${sql(networkKpiList.NR)}
         FROM dnb.stats_v3_hourly.nrcellcu_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.rpuserplanelink_v_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.mpprocessingresource_v_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_v_std_kpi_view as t5
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
         WHERE t1."Region" = 'All'
         ORDER BY time;`;
-
     return sendResults(req, res, result);
 }
 
@@ -31,16 +30,14 @@ const regionHourlyStatsNR = async (req, res) => {
     t1."Region" as object, ${sql(networkKpiList.NR)}
     FROM dnb.stats_v3_hourly.nrcellcu_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.rpuserplanelink_v_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.mpprocessingresource_v_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_v_std_kpi_view as t5
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
     WHERE t1."Region" <> 'All'
-          and t1."MCMC_State" = 'All'
-          and t1."DISTRICT" = 'All'
           and t1."Cluster_ID" = 'All'
         ORDER BY t1."Region", t1.date_id;`;
     return sendResults(req, res, result);
@@ -53,13 +50,13 @@ const clusterHourlyStatsNR = async (req, res) => {
     t1."Cluster_ID" as object, ${sql(networkKpiList.NR)}
     FROM dnb.stats_v3_hourly.nrcellcu_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.rpuserplanelink_v_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.mpprocessingresource_v_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.nrcelldu_v_std_kpi_view as t5
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
     WHERE t1."Cluster_ID" <> 'All'
           AND t1."Cluster_ID" LIKE ${clusterId}
         ORDER BY t1."Cluster_ID", t1.date_id;`;
@@ -92,7 +89,7 @@ const cellHourlyStatsNR = async (request, response) => {
             LEFT JOIN dnb.stats_v3_hourly.tbl_cell_mpprocessingresource_v_std_kpi as t5
             on t1.date_id = t5.date_id
             and t1.nr_name = t5.erbs
-            LEFT JOIN dnb.rfdb.df_dpm as obs on left (t1."nr_name", 9) like obs.site_id
+            LEFT JOIN dnb.stats_v3_hourly.df_dpm as obs on left (t1."nr_name", 9) like obs.site_id
         WHERE t1.nrcelldu LIKE ${cellId}
         ORDER BY t1.date_id;
     `;
@@ -447,7 +444,7 @@ const customCellListHourlyStatsNR2 = async (request, response) => {
                                   SUM(pmpdcppktlossultodiscqos)   AS pmpdcppktlossultodiscqos
                            FROM stats_v3_hourly."RPUSERPLANELINK-V" as dt1
                            WHERE ne_name IN (SELECT DISTINCT "Sitename"
-                                             FROM rfdb.cell_mapping
+                                             FROM stats_v3_hourly.cell_mapping
                                              WHERE "Cellname" IN ${sql(cells)})
                            GROUP BY dt1.date_id, dt1.ne_name),
              counters2 AS (SELECT date_id,
@@ -476,7 +473,7 @@ const customCellListHourlyStatsNR2 = async (request, response) => {
                                       pmprocessorloadlcdistr_10)        as denom_cpu
                            FROM stats_v3_hourly."tbl_agg_mpprocessingresource_v_vectors" as dt
                            WHERE erbs IN (SELECT DISTINCT "Sitename"
-                                          FROM rfdb.cell_mapping
+                                          FROM stats_v3_hourly.cell_mapping
                                           WHERE "Cellname" IN ${sql(cells)})
                            group by date_id, erbs)
         SELECT counters1.date_id::varchar(19) as time,
@@ -500,17 +497,16 @@ const networkHourlyStatsLTE = async (request, response) => {
                             'Network' as object, ${sql(networkKpiList.LTE)}
         FROM dnb.stats_v3_hourly.eutrancellfdd_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfdd_v_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfddflex_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
         WHERE t1."Region" = 'All'
         ORDER BY time
     `;
     return sendResults(request, response, results);
 };
-
 
 const regionHourlyStatsLTE = async (request, response) => {
     const results = await sql`
@@ -518,11 +514,11 @@ const regionHourlyStatsLTE = async (request, response) => {
                             "Region" as object, ${sql(networkKpiList.LTE)}
         FROM dnb.stats_v3_hourly.eutrancellfdd_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfdd_v_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfddflex_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
         WHERE t1."Region" <> 'All'
           and t1."MCMC_State" = 'All'
           and t1."DISTRICT" = 'All'
@@ -540,11 +536,11 @@ const clusterHourlyStatsLTE = async (req, res) => {
                             "Cluster_ID" as object, ${sql(networkKpiList.LTE)}
         FROM dnb.stats_v3_hourly.eutrancellfdd_std_kpi_view as t1
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfdd_v_std_kpi_view as t2
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellfddflex_std_kpi_view as t3
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
             LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_std_kpi_view as t4
-            USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, "Region", "Cluster_ID")
     WHERE t1."Cluster_ID" <> 'All'
           AND t1."Cluster_ID" LIKE ${clusterId}
         ORDER BY t1."Cluster_ID", t1.date_id;`;
@@ -1073,7 +1069,6 @@ const customCellListHourlyStatsLTE = async (request, response) => {
     return response.status(200).json(results);
 }
 
-
 const networkHourlyPlmnStatsNR = async (request, response) => {
     const results = await sql`
         SELECT tt1.date_id::varchar(19) as time,
@@ -1082,7 +1077,7 @@ const networkHourlyPlmnStatsNR = async (request, response) => {
         FROM 
         dnb.stats_v3_hourly.nrcellcu_flex_plmn_kpi_view as tt1
         LEFT JOIN dnb.stats_v3_hourly.nrcelldu_flex_plmn_kpi_view as tt2
-        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
+        USING (date_id, mobile_operator, "Region", "Cluster_ID")
         WHERE tt1."Region" = 'All'
         ORDER BY time;
     `;
@@ -1098,7 +1093,7 @@ const clusterHourlyPlmnStatsNR = async (request, response) => {
                        tt2.flex_filtername, ${sql(plmnKpiList.NR)}
         FROM dnb.stats_v3_hourly.nrcellcu_flex_plmn_kpi_view as tt1
         LEFT JOIN dnb.stats_v3_hourly.nrcelldu_flex_plmn_kpi_view as tt2
-        USING (date_id, mobile_operator, "Region", "MCMC_State", "Cluster_ID")
+        USING (date_id, mobile_operator, "Region", "Cluster_ID")
         WHERE tt1."Cluster_ID" <> 'All'
           AND tt1."Cluster_ID" LIKE ${clusterId}
         ORDER BY tt1."Cluster_ID", tt1.date_id;
@@ -1137,7 +1132,7 @@ const networkHourlyPlmnStatsLTE = async (request, response) => {
             ${sql(plmnKpiList.LTE)}
             FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
             LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
-            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, mobile_operator, "Region", "Cluster_ID")
             WHERE tt1."Region" = 'All'
             ORDER BY time;
     `;
@@ -1152,7 +1147,7 @@ const clusterHourlyPlmnStatsLTE = async (request, response) => {
             ${sql(plmnKpiList.LTE)}
             FROM dnb.stats_v3_hourly.eutrancellfddflex_plmn_kpi_view as tt1
             LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
-            USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+            USING (date_id, mobile_operator, "Region", "Cluster_ID")
             WHERE tt1."Cluster_ID" <> 'All'
             and tt1."Cluster_ID" LIKE ${clusterId}
             ORDER BY tt1."Cluster_ID", tt1.date_id
@@ -1174,7 +1169,7 @@ const cellHourlyPlmnStatsLTE = async (request, response) => {
         ${sql(plmnKpiList.LTE)}
         FROM dnb.stats_v3_hourly.tbl_cell_eutrancellfddflex_plmn_kpi_view as tt1
         LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
-        USING (date_id, mobile_operator, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+        USING (date_id, mobile_operator, "Region", "Cluster_ID")
         WHERE tt1.eutrancellfdd = ${cellId}
         ORDER BY time;
     `;

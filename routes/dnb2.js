@@ -9,7 +9,7 @@ const {
 const asyncHandler = require("../middleware/async");
 const sql = require("../db/pgjs/PgJsBackend");
 const pgDbGeo = require("../db/pgQueriesGeo");
-const {getRaster} = require("../db/pgjs/PgJsQueries14");
+const {getRaster, getRasterPointsInGrid} = require("../db/pgjs/PgJsQueries14");
 const {testRunPython} = require("./utils");
 
 router.get('/', testQuery)
@@ -41,8 +41,11 @@ router.get('/clusterStatsHourlyNR', asyncHandler(clusterHourlyStatsNR));
 router.get('/clusterStatsHourlyLTE', asyncHandler(clusterHourlyStatsLTE));
 router.post('/updateDashboardUser', asyncHandler(updateUserID));
 
-router.get('/rasters/:raster', asyncHandler(getRaster));
+router.get('/rasters/:raster', cache12h, asyncHandler(getRaster));
+router.get('/rasterDetails/:folder/:lat/:lng', cache12h, asyncHandler(getRasterPointsInGrid));
+router.get('/cellCentroid', cache12h, asyncHandler(pgDbGeo.getCellCentroid));
 
 router.get('/testRunPython/:arg1/:arg2', asyncHandler(testRunPython));
+
 
 module.exports = router;

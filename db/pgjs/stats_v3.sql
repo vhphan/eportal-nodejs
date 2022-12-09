@@ -37,9 +37,9 @@ SELECT t1.date_id::varchar(10) as time,
        "Interfreq HOSR"
 FROM stats_v3.eutrancellfdd_std_kpi_view as t1
          LEFT JOIN stats_v3.eutrancellfdd_v_std_kpi_view as t2
-                   USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+                   USING (date_id, "Region", "Cluster_ID")
          LEFT JOIN stats_v3.eutrancellfddflex_std_kpi_view as t3
-                   USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+                   USING (date_id, "Region", "Cluster_ID")
          LEFT JOIN stats_v3.eutrancellrelation_std_kpi_view as t4
-                   USING (date_id, "Region", "MCMC_State", "DISTRICT", "Cluster_ID")
+                   USING (date_id, "Region", "Cluster_ID")
 WHERE t1."Region" = 'All';

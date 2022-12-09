@@ -8,10 +8,7 @@ const {
 const {logger} = require("../middleware/logger");
 const fs = require("fs");
 
-const getCells = async (request, response) => {
-    const {system, size, stats} = request.query;
-    let {region} = request.query;
-    region = region === 'all' ? '%' : region;
+function getGeomColForSize(size) {
     let geomCol;
     switch (size) {
         case 'n':
@@ -29,6 +26,33 @@ const getCells = async (request, response) => {
             geomCol = 'cells.geometry_0_5';
             break;
     }
+    return geomCol;
+}
+
+const getCellCentroid = async (request, response) => {
+    const {cellName, cellSize} = request.query;
+    const geomCol = getGeomColForSize(cellSize);
+    const results = await sql`
+                            select st_x(st_centroid(${sql(geomCol)})) as lng, st_y(st_centroid(${sql(geomCol)})) as lat 
+                                from dnb.rfdb.all_cells as cells WHERE "Cellname" = ${cellName};`;
+    if (results.length === 0) {
+        return response.status(404).send({
+            success: false,
+            error: 'Cell not found'
+        });
+    }
+    response.status(200).json({
+            success: true,
+            data: results[0]
+        }
+    );
+}
+
+const getCells = async (request, response) => {
+    const {system, size, stats} = request.query;
+    let {region} = request.query;
+    region = region === 'all' ? '%' : region;
+    let geomCol = getGeomColForSize(size);
     if (!['L7', 'N7', 'N3'].includes(system)) {
         return response.status(400).send({
             error: 'Invalid system'
@@ -97,5 +121,6 @@ const getClusters = async (request, response) => {
 
 module.exports = {
     getCells,
-    getClusters
+    getClusters,
+    getCellCentroid,
 };

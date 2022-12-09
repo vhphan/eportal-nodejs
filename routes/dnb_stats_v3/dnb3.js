@@ -1,5 +1,5 @@
 const express = require('express');
-const {cache12h, cache15m, cache6h} = require("../../middleware/redisCache");
+const {cache12h, cache15m, cache6h, cache2h} = require("../../middleware/redisCache");
 const asyncHandler = require("../../middleware/async");
 
 const {
@@ -92,8 +92,8 @@ router.get('/networkHourlyNR', cache15m, asyncHandler(networkHourlyStatsNR));
 router.get('/regionHourlyNR', cache15m, asyncHandler(regionHourlyStatsNR));
 router.get(['/clusterHourlyNR', '/clusterStatsHourlyNR'], cache15m, asyncHandler(clusterHourlyStatsNR));
 router.get(['/cellHourlyNR', '/networkHourlyNRCell'], cache15m, asyncHandler(cellHourlyStatsNR));
-router.get('/networkHourlyLTE', cache15m, asyncHandler(networkHourlyStatsLTE));
-router.get('/regionHourlyLTE', cache15m, asyncHandler(regionHourlyStatsLTE));
+router.get('/networkHourlyLTE', cache2h, asyncHandler(networkHourlyStatsLTE));
+router.get('/regionHourlyLTE', cache2h, asyncHandler(regionHourlyStatsLTE));
 router.get(['/clusterHourlyLTE', '/clusterStatsHourlyLTE'], cache15m, asyncHandler(clusterHourlyStatsLTE));
 router.get(['/cellHourlyLTE', '/networkHourlyLTECell'], cache15m, asyncHandler(cellHourlyStatsLTE));
 router.get(['/clusterCustomDatesNR'], cache6h, asyncHandler(clusterStatsAggregatedNR));
