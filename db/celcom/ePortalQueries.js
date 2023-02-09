@@ -40,6 +40,9 @@ const getSimplifiedE2E = async (request, response) => {
     response.status(200).json(results);
 }
 
+
+
+
 module.exports = {
     getProjects,
     getProcesses,

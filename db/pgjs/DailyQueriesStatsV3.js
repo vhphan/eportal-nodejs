@@ -18,7 +18,7 @@ const resultsAsExcelFormat = (results, {parseDate = false, dateColumns = []}) =>
         size: results.length,
         total_pages: 1,
     });
-}
+};
 
 function sendResults(request, response, results, opts = {}) {
     if (request.query.format === 'csv') {
@@ -80,7 +80,7 @@ const clusterDailyStatsLTE = async (request, response) => {
         ORDER BY t1."Cluster_ID", t1.date_id;`;
 
     return sendResults(request, response, results);
-}
+};
 
 const cellDailyStatsLTE = async (request, response) => {
     const cellId = request.query.cellId || request.params.cellId || request.query.object || request.params.object;
@@ -90,23 +90,37 @@ const cellDailyStatsLTE = async (request, response) => {
         });
         return;
     }
+    const siteId = cellId.split('_')[0];
+    // get current time as startTime
+    const startTime = new Date();
 
     const results = await sql`
-        SELECT t1.date_id::varchar(10) as time, 
-                            t1.eutrancellfdd as object, on_board_date, ${sql(networkKpiList.LTE)}
-        FROM dnb.stats_v3.tbl_cell_eutrancellfdd_std_kpi as t1
-            LEFT JOIN dnb.stats_v3.tbl_cell_eutrancellfdd_v_std_kpi as t2
-            USING (date_id, erbs, eutrancellfdd)
-            LEFT JOIN dnb.stats_v3.tbl_cell_eutrancellfddflex_std_kpi as t3
-            USING (date_id, erbs, eutrancellfdd)
-            LEFT JOIN dnb.stats_v3.tbl_cell_eutrancellrelation_std_kpi as t4
-            USING (date_id, erbs, eutrancellfdd)
-            LEFT JOIN dnb.rfdb.df_dpm as obs
-        on left (t1."erbs", 9) like obs.site_id
-        WHERE t1.eutrancellfdd LIKE ${cellId}
-        ORDER BY t1.date_id;`;
+        
+        with t1 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfdd_std_kpi where eutrancellfdd = ${cellId}),
+             t2 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfdd_v_std_kpi where eutrancellfdd = ${cellId}),
+             t3 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfddflex_std_kpi where eutrancellfdd = ${cellId}),
+             t4 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellrelation_std_kpi where eutrancellfdd = ${cellId}),
+             d6 AS (SELECT * FROM dnb.rfdb.df_dpm WHERE site_id = ${siteId} LIMIT 1)
+        
+        SELECT t1.date_id::varchar(10) as time,
+               t1.eutrancellfdd        as object,
+               on_board_date,
+               ${sql(networkKpiList.LTE)}
+        FROM t1
+                 LEFT JOIN t2
+                           USING (date_id, erbs, eutrancellfdd)
+                 LEFT JOIN t3
+                           USING (date_id, erbs, eutrancellfdd)
+                 LEFT JOIN t4
+                           USING (date_id, erbs, eutrancellfdd)
+                 CROSS JOIN d6
+        ORDER BY t1.date_id
+        
+        `;
+        const endTime = new Date();
+        logger.info(`cellDailyStatsLTE query took: ${endTime - startTime}ms`);
     return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
-}
+};
 
 const networkDailyStatsNR = async (request, response) => {
     const results = await sql`
@@ -167,7 +181,7 @@ const clusterDailyStatsNR = async (request, response) => {
           AND t1."Cluster_ID" LIKE ${clusterId}
         ORDER BY t1."Cluster_ID", t1.date_id;`;
     return sendResults(request, response, results);
-}
+};
 
 const cellDailyStatsNR = async (request, response) => {
     const cellId = request.query.cellId || request.params.cellId || request.query.object || request.params.object;
@@ -177,32 +191,38 @@ const cellDailyStatsNR = async (request, response) => {
         });
         return;
     }
+    const siteId = cellId.split('_')[0];
+    const siteIdLike = siteId + '%';
+
     const results = await sql`
-        SELECT t1.date_id::varchar(10) as time, 
-                            t1.nrcelldu as object, on_board_date, ${sql(networkKpiList.NR)}
+                    with t1 AS (SELECT * from dnb.stats_v3.tbl_cell_nrcelldu_std_kpi where nrcelldu = ${cellId}),
+                     t2 AS (SELECT * from dnb.stats_v3.tbl_cell_nrcellcu_std_kpi where nrcellcu = ${cellId}),
+                     t3 AS (SELECT * from dnb.stats_v3.tbl_cell_nrcelldu_v_std_kpi where nrcelldu = ${cellId}),
+                     t4 AS (SELECT * from dnb.stats_v3.tbl_cell_rpuserplanelink_v_std_kpi where ne_name like ${siteIdLike}),
+                     t5 AS (SELECT * from dnb.stats_v3.tbl_cell_mpprocessingresource_v_std_kpi where erbs like ${siteIdLike}),
+                     d6 AS (SELECT * FROM dnb.rfdb.df_dpm WHERE site_id = ${siteId} LIMIT 1)
+                
+                SELECT t1.date_id::varchar(10) as time,
+                       t1.nrcelldu             as object,
+                       d6.on_board_date
+                        ,
+                       ${sql(networkKpiList.NR)}
+                FROM t1
+                         LEFT JOIN t2
+                                   on t1.date_id = t2.date_id
+                         LEFT JOIN t3
+                                   on t1.date_id = t3.date_id
+                         LEFT JOIN t4
+                                   on t1.date_id = t4.date_id
+                         LEFT JOIN t5
+                                   on t1.date_id = t5.date_id
+                                       and t1.nr_name = t5.erbs
+                         CROSS JOIN d6
+                ORDER BY t1.date_id;
+`;
 
-        FROM dnb.stats_v3.tbl_cell_nrcelldu_std_kpi as t1
-            LEFT JOIN dnb.stats_v3.tbl_cell_nrcellcu_std_kpi as t2
-        on t1.date_id = t2.date_id
-            and t1.nr_name = t2.nr_name
-            and t1.nrcelldu = t2.nrcellcu
-            LEFT JOIN dnb.stats_v3.tbl_cell_nrcelldu_v_std_kpi as t3
-            on t1.date_id = t3.date_id
-            and t1.nr_name = t3.nr_name
-            and t1.nrcelldu = t3.nrcelldu
-            LEFT JOIN dnb.stats_v3.tbl_cell_rpuserplanelink_v_std_kpi as t4
-            on t1.date_id = t4.date_id
-            and t1.nr_name = t4.ne_name
-            LEFT JOIN dnb.stats_v3.tbl_cell_mpprocessingresource_v_std_kpi as t5
-            on t1.date_id = t5.date_id
-            and t1.nr_name = t5.erbs
-            LEFT JOIN dnb.rfdb.df_dpm as obs on left (t1."nr_name", 9) like obs.site_id
-
-        WHERE t1.nrcelldu LIKE ${cellId}
-        ORDER BY t1.date_id;
-    `;
     return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
-}
+};
 
 const cellsList = async (request, response) => {
     const rand = request.query.rand;
@@ -233,7 +253,7 @@ const cellsList = async (request, response) => {
                  LEFT JOIN dnb.rfdb.df_dpm as t2 on t1."SITEID" = t2.site_id;
     `;
     return sendResults(request, response, results);
-}
+};
 
 const cellsListNR = async (request, response) => {
     const results = await sql`
@@ -245,7 +265,7 @@ const cellsListNR = async (request, response) => {
         order by nrcellcu;
     `;
     return response.status(200).json(results);
-}
+};
 
 const cellsListLTE = async (request, response) => {
     const results = await sql`
@@ -257,7 +277,7 @@ const cellsListLTE = async (request, response) => {
         order by eutrancellfdd;
     `;
     return response.status(200).json(results);
-}
+};
 
 const customCellListStatsNR = async (request, response) => {
 
@@ -608,7 +628,7 @@ const customCellListStatsNR = async (request, response) => {
         ;
     `;
     return response.status(200).json(results);
-}
+};
 
 const customCellListStatsNR2 = async (request, response) => {
     const cells = request.query.cells;
@@ -669,7 +689,7 @@ const customCellListStatsNR2 = async (request, response) => {
         ;
     `;
     return response.status(200).json(results);
-}
+};
 
 const customCellListStatsLTE = async (request, response) => {
     const cells = request.query.cells;
@@ -1171,7 +1191,7 @@ const customCellListStatsLTE = async (request, response) => {
         ;
     `;
     return response.status(200).json(results);
-}
+};
 
 const networkDailyPlmnStatsNR = async (request, response) => {
     const results = await sql`
@@ -1243,7 +1263,7 @@ const cellDailyPlmnStatsNR = async (request, response) => {
             ORDER BY time;
     `;
     return sendResults(request, response, results);
-}
+};
 
 const networkDailyPlmnStatsLTE = async (request, response) => {
     const results = await sql`
@@ -1288,7 +1308,7 @@ const clusterDailyPlmnStatsLTE = async (request, response) => {
         ORDER BY tt1."Cluster_ID", tt1.date_id
     `;
     return sendResults(request, response, results);
-}
+};
 
 const cellDailyPlmnStatsLTE = async (request, response) => {
     const cellId = request.query.cellId || request.params.cellId || request.query.object || request.params.object;
@@ -1298,18 +1318,21 @@ const cellDailyPlmnStatsLTE = async (request, response) => {
         });
         return;
     }
+    const notReadyKPI = ['Interfreq HOSR', 'VoLTE Redirection Success Rate'];
+    const kpiList = plmnKpiList.LTE;
+    // remove notReadyKPI from kpiList
+    const kpiListReady = kpiList.filter(kpi => !notReadyKPI.includes(kpi));
+
     const results = await sql`
         SELECT tt1.date_id::varchar(10) as time,
         tt1.mobile_operator as object,
-        ${sql(plmnKpiList.LTE)}
+        ${sql(kpiListReady)}
         FROM dnb.stats_v3.tbl_cell_eutrancellfddflex_plmn_kpi_view as tt1
-        LEFT JOIN dnb.stats_v3.eutrancellrelation_plmn_kpi_view as tt2
-        USING (date_id, mobile_operator, "Region", "Cluster_ID")
         WHERE tt1.eutrancellfdd = ${cellId}
         ORDER BY time;
     `;
     return sendResults(request, response, results, {parseDate: true, dateColumns: ['on_board_date']});
-}
+};
 
 const clusterStatsAggregatedNR = async (request, response) => {
     const {startDate, endDate} = request.query;
@@ -1436,9 +1459,9 @@ const clusterStatsAggregatedNR = async (request, response) => {
                             row_number() over ()                                  as id
                             FROM COUNTERS;
     
-    `
+    `;
     return sendResults(request, response, results);
-}
+};
 
 const clusterStatsAggregatedLTE = async (request, response) => {
     const {startDate, endDate} = request.query;
@@ -1624,10 +1647,9 @@ const clusterStatsAggregatedLTE = async (request, response) => {
         pmmacharqulsucc256qam))                                                                     AS "UL 256QAM%",
         row_number() over ()                                                                                as id
         FROM COUNTERS;
-    `
+    `;
     return sendResults(request, response, results);
-}
-
+};
 
 
 module.exports = {
@@ -1665,4 +1687,4 @@ module.exports = {
 
     sendResults
 
-}
+};

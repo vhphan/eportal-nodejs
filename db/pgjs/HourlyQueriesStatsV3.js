@@ -564,7 +564,7 @@ const cellHourlyStatsLTE = async (request, response) => {
         USING (date_id, eutrancellfdd)
              LEFT JOIN dnb.stats_v3_hourly.tbl_cell_eutrancellrelation_std_kpi as t4
         USING (date_id, eutrancellfdd)
-    WHERE t1.eutrancellfdd='DBSEP1833_L7_0010'
+    WHERE t1.eutrancellfdd=${cellId}
     order by date_id;
     `;
     return sendResults(request, response, results);
@@ -1111,7 +1111,7 @@ const cellHourlyPlmnStatsNR = async (request, response) => {
         return;
     }
     const results = await sql`
-    SELECT tt1.date_id::varchar(10) as time,
+    SELECT tt1.date_id::varchar(19) as time,
        tt1.mobile_operator as object,
        ${sql(plmnKpiList.NR)}
        FROM dnb.stats_v3_hourly.tbl_cell_nrcellcu_flex_plmn_kpi as tt1
@@ -1163,13 +1163,16 @@ const cellHourlyPlmnStatsLTE = async (request, response) => {
         });
         return;
     }
+    const notReadyKPI=['Interfreq HOSR', 'VoLTE Redirection Success Rate']
+    const kpiList = plmnKpiList.LTE;
+    // remove notReadyKPI from kpiList
+    const kpiListReady = kpiList.filter(kpi => !notReadyKPI.includes(kpi));
+
     const results = await sql`
-        SELECT tt1.date_id::varchar(10) as time,
+        SELECT tt1.date_id::varchar(19) as time,
         tt1.mobile_operator as object,
-        ${sql(plmnKpiList.LTE)}
+        ${sql(kpiListReady)}
         FROM dnb.stats_v3_hourly.tbl_cell_eutrancellfddflex_plmn_kpi_view as tt1
-        LEFT JOIN dnb.stats_v3_hourly.eutrancellrelation_plmn_kpi_view as tt2
-        USING (date_id, mobile_operator, "Region", "Cluster_ID")
         WHERE tt1.eutrancellfdd = ${cellId}
         ORDER BY time;
     `;
