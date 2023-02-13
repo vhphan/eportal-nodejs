@@ -91,11 +91,8 @@ const cellDailyStatsLTE = async (request, response) => {
         return;
     }
     const siteId = cellId.split('_')[0];
-    // get current time as startTime
     const startTime = new Date();
-
     const results = await sql`
-        
         with t1 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfdd_std_kpi where eutrancellfdd = ${cellId}),
              t2 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfdd_v_std_kpi where eutrancellfdd = ${cellId}),
              t3 AS (SELECT * from dnb.stats_v3.tbl_cell_eutrancellfddflex_std_kpi where eutrancellfdd = ${cellId}),
@@ -108,11 +105,11 @@ const cellDailyStatsLTE = async (request, response) => {
                ${sql(networkKpiList.LTE)}
         FROM t1
                  LEFT JOIN t2
-                           USING (date_id, erbs, eutrancellfdd)
+                           on t1.date_id=t2.date_id
                  LEFT JOIN t3
-                           USING (date_id, erbs, eutrancellfdd)
+                           on t1.date_id=t3.date_id
                  LEFT JOIN t4
-                           USING (date_id, erbs, eutrancellfdd)
+                           on t1.date_id=t4.date_id
                  CROSS JOIN d6
         ORDER BY t1.date_id
         
@@ -216,7 +213,6 @@ const cellDailyStatsNR = async (request, response) => {
                                    on t1.date_id = t4.date_id
                          LEFT JOIN t5
                                    on t1.date_id = t5.date_id
-                                       and t1.nr_name = t5.erbs
                          CROSS JOIN d6
                 ORDER BY t1.date_id;
 `;
