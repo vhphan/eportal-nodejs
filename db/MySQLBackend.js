@@ -49,7 +49,6 @@ class MySQLBackend {
         // });
     }
 
-
     async query(sqlQuery, sqlParams) {
         await this.connect();
         // const [rows, fields] = await this.connection.execute(

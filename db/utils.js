@@ -5,7 +5,7 @@ const nodemailer = require("nodemailer");
 
 const roundJsonValues = (jsonArray) => {
     return jsonArray.map(d1 => {
-        let d2 = {}
+        let d2 = {};
         for (const [key, value] of Object.entries(d1)) {
             if (typeof value === "number") {
                 d2[key] = parseFloat(value.toFixed(5));
@@ -14,8 +14,8 @@ const roundJsonValues = (jsonArray) => {
             d2[key] = value;
         }
         return d2;
-    })
-}
+    });
+};
 
 const dataToCSV = (dataList, headers) => {
 
@@ -27,7 +27,7 @@ const dataToCSV = (dataList, headers) => {
         arr.push(object.id);
         arr.push(object.term);
         arr.push(object.Date);
-        allObjects.push(arr)
+        allObjects.push(arr);
     });
 
     let csvContent = "";
@@ -42,7 +42,7 @@ const dataToCSV = (dataList, headers) => {
 const getCookies = request => {
     let cookies = {};
     request.headers && request.headers.cookie && request.headers.cookie.split(';').forEach(function (cookie) {
-        let parts = cookie.match(/(.*?)=(.*)$/)
+        let parts = cookie.match(/(.*?)=(.*)$/);
         cookies[parts[1].trim()] = (parts[2] || '').trim();
     });
     return cookies;
@@ -97,30 +97,28 @@ const defaultListenerCallback = async (data) => {
                 idObj['System'],
                 idObj['WorkplanID'],
 
-            ])
+            ]);
         }
-    })
+    });
     console.log(parseResults);
     client.query(format('INSERT INTO logging.t_history_parsed (table_name, column_name, old_value, new_value, updated_by, time_stamp, dnb_index, "SiteName", "SiteProjectName", "SectorId", "System", "WorkplanID") VALUES %L', parseResults), [], (err, result) => {
         console.log(err);
         console.log(result);
     });
-}
+};
 
 const createDbHistoryListener = (client, eventName = 'db_change', callback = defaultListenerCallback) => {
     createListener(client, eventName, callback);
-}
+};
 // const createJobListener = (client, socketServer) => {
 //     createListener(client, 'new_jobs', async (data) => {
 //         const payload = JSON.parse(data.payload);
 //
 //     });
 // }
-const sendEmail = function (email, subject, message) {
-    logger.info("Sending email to " + email);
-    logger.info(email);
-    logger.info(message);
-    const transporter = nodemailer.createTransport({
+
+function getTransporter() {
+    return nodemailer.createTransport({
         host: 'mail.eprojecttrackers.com',
         port: 465,
         auth: {
@@ -128,22 +126,52 @@ const sendEmail = function (email, subject, message) {
             pass: process.env.MAIL_PASSWORD
         }
     });
-    const mailOptions = {
+}
+
+function getMailOptions(email, subject, message) {
+    return {
         from: 'eri_portal@eprojecttrackers.com',
         to: email,
         bcc: 'vee.huen.phan@ericsson.com',
         subject: subject,
         text: message
-    }
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            logger.error(error.message);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
+    };
 }
+
+const sendEmail = async function (email, subject, message) {
+    logger.info("Sending email to " + email);
+    logger.info(email);
+    logger.info(message);
+    const transporter = getTransporter();
+    const mailOptions = getMailOptions(email, subject, message);
+    await transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            logger.error(error.message);
+            return;
+        }
+        logger.error('Email sent: ' + info.response);
+    });
+};
+
+
+// create an asynchronous version of the function sendEmail
+const sendEmailAsync = async function (email, subject, message) {
+    return new Promise((resolve, reject) => {
+        const transporter = getTransporter();
+        const mailOptions = getMailOptions(email, subject, message);
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                logger.error("Email error: " + error.message);
+                resolve(false); // or use reject(false) but then you will have to handle errors
+                return;
+            }
+            logger.info('Email sent: ' + info.response);
+            resolve(true);
+        });
+    });
+};
+
 
 module.exports = {
     dataToCSV,
@@ -152,4 +180,4 @@ module.exports = {
     isObject,
     createListeners: createDbHistoryListener,
     roundJsonValues, sendEmail
-}
+};

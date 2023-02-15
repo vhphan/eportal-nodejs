@@ -29,7 +29,7 @@ function createWatcherProcess() {
 const renameProp = (
     oldProp,
     newProp,
-{ [oldProp]: valueOfOldProp, ...others }
+    {[oldProp]: valueOfOldProp, ...others}
 ) => ({
     [newProp]: valueOfOldProp,
     ...others
@@ -44,16 +44,31 @@ function renameProps(obj, oldProps, newProps) {
     }, {});
 }
 
-const unless = function(middleware, ...paths) {
-  return function(req, res, next) {
-    const pathCheck = paths.some(path => path === req.path);
-    pathCheck ? next() : middleware(req, res, next);
-  };
+const unless = function (middleware, ...paths) {
+    return function (req, res, next) {
+        const pathCheck = paths.some(path => path === req.path);
+        pathCheck ? next() : middleware(req, res, next);
+    };
+};
+
+// function to generate strong password with symbols and capital letters
+const generateStrongPassword = (passwordLength=10) => {
+
+    const lowerCase = "abcdefghijklmnopqrstuvwxyz";
+    const upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const numbers = "0123456789";
+    const symbols = "!@#$%^&*()_+~`|}{[]:;?><,./-=";
+    const all = lowerCase + upperCase + numbers + symbols;
+    return Array(passwordLength)
+        .fill(all)
+        .map(x => x[Math.floor(Math.random() * x.length)])
+        .join("");
 };
 
 module.exports = {
     createWatcherProcess,
     renameProp,
     renameProps,
-    unless
-}
+    unless,
+    generateStrongPassword
+};
