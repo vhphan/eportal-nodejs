@@ -29,7 +29,7 @@ const resetSomeUsers = async (numOfUsers=2) => {
     })
 }
 
-exports.initScheduledJobsForCelcom = () => {
+const initScheduledJobsForCelcom = () => {
     // create cron job for every day at 7:00 AM
     const cronString = "0 7 * * *";
     CronJob.schedule(cronString, async () => {
@@ -39,5 +39,6 @@ exports.initScheduledJobsForCelcom = () => {
 };
 
 module.exports = {
-    getUsersToReset: resetSomeUsers,
+    resetSomeUsers,
+    initScheduledJobsForCelcom
 }

@@ -22,6 +22,7 @@ const {postgrestProxy} = require("./proxies/proxify");
 const {createProxyMiddleware} = require("http-proxy-middleware");
 const result = require('dotenv').config({path: './.env'})
 const {createWatcherProcess} = require("./tools/utils");
+const {initScheduledJobsForCelcom} = require("./crons/scheduledFuncs");
 
 logger.info('Starting app.js...');
 if (result.error) {
@@ -119,3 +120,6 @@ if (process.platform === 'win32') {
 
 
 }
+
+// cron jobs
+initScheduledJobsForCelcom();
