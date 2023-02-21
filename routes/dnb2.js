@@ -41,7 +41,7 @@ router.get('/clusterStatsHourlyNR', asyncHandler(clusterHourlyStatsNR));
 router.get('/clusterStatsHourlyLTE', asyncHandler(clusterHourlyStatsLTE));
 router.post('/updateDashboardUser', asyncHandler(updateUserID));
 
-router.get('/rasters/:raster', cache12h, asyncHandler(getRaster));
+router.get('/rasters/:raster', cache12h, asyncHandler(getRaster('dnb')));
 router.get('/rasterDetails/:folder/:lat/:lng', cache12h, asyncHandler(getRasterPointsInGrid));
 router.get('/cellCentroid', cache12h, asyncHandler(pgDbGeo.getCellCentroid));
 

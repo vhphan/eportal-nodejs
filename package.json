@@ -44,5 +44,8 @@
   "devDependencies": {
     "http-proxy-middleware": "^2.0.4",
     "nodemon": "^2.0.15"
+  },
+  "imports": {
+    "#src/*": "./*.js"
   }
 }

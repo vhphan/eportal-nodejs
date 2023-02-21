@@ -1,0 +1,6 @@
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/regionalCountTrend
+Accept: application/json
+API: {{apiKey}}
+

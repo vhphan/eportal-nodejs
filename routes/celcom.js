@@ -37,7 +37,6 @@ createListener(client, 'new_data', async (data) => {
     if (router.locals.lastEmailSentAt[updatedTable] && (Date.now() - router.locals.lastEmailSentAt[updatedTable]) < 1000 * 60 * 30) {
         return;
     }
-    7
     sendEmail(process.env.NODE_ENV !== 'production'? process.env.CELCOM_EMAILS_DEV: process.env.CELCOM_EMAILS, 'Auto Messaging: New Data Processed', message);
     router.locals.lastEmailSentAt[updatedTable] = new Date();
 
@@ -85,11 +84,8 @@ router.get(
     asyncHandler(getCells));
 
 router.get('/ssoReportsPendingHQReview', asyncHandler(getReportsPendingHQReview));
-
 router.put('/ssoReportsPendingHQReview/:reportId', asyncHandler(reviewReport('single')));
-
 router.get('/ssoReportsBulkApproved', asyncHandler(getReportsBulkApproved));
-
 router.put('/ssoReportsBulkApproved', asyncHandler(reviewReport('multiple')));
 
 // router.post('/upload-test-file', asyncHandler(async (req, res) => {
@@ -128,7 +124,6 @@ router.get('/statsFiles', asyncHandler(async (req, res) => {
     }))
     return res.json(filesWithLinks);
 }));
-
 router.get('/statsFiles/:fileName', asyncHandler(
     downloadZipFile('celcom', 'stats_files')
 ));

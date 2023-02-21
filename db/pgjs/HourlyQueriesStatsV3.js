@@ -1,4 +1,4 @@
-const sql = require('./PgJsBackend14');
+const {sqlDnb: sql} = require('./PgJsBackend14');
 const {arrayToCsv} = require("../../routes/utils");
 const {logger} = require("../../middleware/logger");
 const {networkKpiList, plmnKpiList} = require("../constants");
