@@ -6,6 +6,8 @@ const {use} = require("express/lib/router");
 const {response} = require("express");
 const {logger} = require("../middleware/logger");
 const {saveToCache} = require("./RedisBackend");
+const {getSql} = require("#src/db/pgjs/PgJsBackend14");
+const {roundJsonValues} = require("#src/db/utils");
 const dnbPg = new PostgresBackend('dnb');
 const celcomPg = new PostgresBackend('celcom');
 
@@ -20,11 +22,11 @@ const getCellInfo = async (request, response) => {
     await dnbPg.setupPool();
     dnbPg.pool.query("SELECT * FROM dnb.public.tblcellid WHERE \"Cellname\" = $1", [cellName], (error, results) => {
         if (error) {
-            throw error
+            throw error;
         }
         response.status(200).json(results.rows);
-    })
-}
+    });
+};
 
 const getCurrentNominal = async (dnbIndex) => {
     const sqlQuery = "SELECT * FROM dnb.rfdb.rf_nominal WHERE dnb_index=$1";
@@ -66,7 +68,7 @@ const updateNominal = asyncHandler(async (request, response) => {
         response.status(200).json({success: true});
     });
 
-})
+});
 
 const updateConfigs = asyncHandler(async (request, response) => {
     const {body} = request;
@@ -99,11 +101,11 @@ const updateConfigs = asyncHandler(async (request, response) => {
     await dnbPg.setupPool();
     dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
-            throw error
+            throw error;
         }
         response.status(200).json({success: true});
     });
-})
+});
 
 const dbFullViewData = async (request, response) => {
     const {queryName} = request.query;
@@ -123,23 +125,23 @@ const dbFullViewData = async (request, response) => {
                 "       nominal_change_log,\n" +
                 "       \"District\",\n" +
                 "       \"State\"\n" +
-                "FROM dnb.rfdb.nominal_view;"
+                "FROM dnb.rfdb.nominal_view;";
             break;
         case 'config':
-            sqlQuery = "SELECT * FROM dnb.rfdb.config_view;"
+            sqlQuery = "SELECT * FROM dnb.rfdb.config_view;";
             break;
         case 'candidates':
-            sqlQuery = "SELECT * FROM dnb.rfdb.candidates_view;"
+            sqlQuery = "SELECT * FROM dnb.rfdb.candidates_view;";
             break;
         default:
-            sqlQuery = "SELECT 'NOTHING SELECTED' as info;"
+            sqlQuery = "SELECT 'NOTHING SELECTED' as info;";
             break;
     }
     dnbPg.query(sqlQuery, [], (error, results) => {
         if (error) throw error;
         response.status(200).json(results);
     });
-}
+};
 
 const getChangeLog = asyncHandler(async (request, response) => {
     const tableName = request.query.tableName || 'all';
@@ -181,11 +183,11 @@ const addJob = async (request, response) => {
     await dnbPg.setupPool();
     dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
-            throw error
+            throw error;
         }
         response.status(200).json({success: true});
     });
-}
+};
 
 const getTabulatorConfig = async (request, response) => {
     const {userId} = request.query;
@@ -199,7 +201,7 @@ const getTabulatorConfig = async (request, response) => {
         if (error) throw error;
         response.status(200).json(results);
     });
-}
+};
 
 const saveTabulatorConfig = async (request, response) => {
     const {body} = request;
@@ -214,11 +216,11 @@ const saveTabulatorConfig = async (request, response) => {
     await dnbPg.setupPool();
     dnbPg.pool.query(sqlQuery, sqlParams, (error, results) => {
         if (error) {
-            throw error
+            throw error;
         }
         response.status(200).json({success: true});
     });
-}
+};
 
 const getGeoJSON = async (request, response) => {
     const {system, region, size, onAir} = request.query;
@@ -232,74 +234,124 @@ const getGeoJSON = async (request, response) => {
         "           ) as f\n" +
         "FROM dnb.public.\"N7_cells\"\n" +
         "WHERE \"Region\" = 'CENTRAL'";
-}
+};
 
-const getTabulatorData = (operator='dnb') => async (request, response, next) => {
-    const {page, size, schema, boolOperand, table, filters, sorters} = request.query;
+const getTabulatorData = (operator = 'dnb', pgVersion = 12) => async (request, response, next) => {
+    const {page, size, schema, table} = request.query;
+    let {filters, filter, sorter, sorters, boolOperand} = request.query;
     const offset = size * (page - 1);
     let filterArray = [];
     let filterValues = [];
     let i = 1;
+    filters = filters || filter;
+    sorters = sorters || sorter;
+    boolOperand = boolOperand || 'and';
 
     if (filters) {
+        const filterTypes = {
+            like: 'like',
+            in: 'in',
+        };
+
         filters.forEach(f => {
-            if (typeof f['value'] === "object") {
+
+            if (typeof f['value'] === 'object') {
                 if ('start' in f['value']) {
+                    let startValue = f['value']['start'];
+                    if (startValue === '') {
+                        return;
+                    }
                     filterArray.push(`${table}."${f['field']}" >= $${i++}`);
-                    filterValues.push(f['value']['start']);
+                    filterValues.push(Number(startValue));
                 }
                 if ('end' in f['value']) {
+                    let endValue = f['value']['end'];
+                    if (endValue === '') {
+                        return;
+                    }
                     filterArray.push(`${table}."${f['field']}" <= $${i++}`);
-                    filterValues.push(f['value']['end']);
+                    filterValues.push(Number(endValue));
+                }
+                if (f['type'] === filterTypes.in) {
+                    filterArray.push(`${table}."${f['field']}" = ANY($${i++})`);
+                    Array.isArray(f['value']) && filterValues.push([f['value']]);
+                    !Array.isArray(f['value']) && filterValues.push(`${f['value']}`);
+                    // filterValues.push(`${f['value']}`);
                 }
                 return;
             }
-            filterValues.push(`%${f['value']}%`);
-            filterArray.push(`${table}."${f['field']}" ${f['type'].replace('like', 'ilike')} $${i++}`);
-        })
+
+            switch (f['type']) {
+                case filterTypes.like:
+                    filterArray.push(`${table}."${f['field']}" ilike $${i++}`);
+                    filterValues.push(`%${f['value']}%`);
+                    break;
+                case filterTypes.in:
+                    filterArray.push(`${table}."${f['field']}" = ANY($${i++})`);
+                    Array.isArray(f['value']) && filterValues.push([f['value']]);
+                    !Array.isArray(f['value']) && filterValues.push(`${f['value']}`);
+                    break;
+            }
+
+        });
     }
+    const filterString = filterArray.length ? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
+
+
     let sorterArray = [];
     if (sorters) {
-        sorters.forEach(sorter=>{
+        sorters.forEach(sorter => {
             let field = sorter['field'];
             let dir = sorter['dir'];
             let quote = '"';
-            sorterArray.push(`${quote}${field}${quote} ${dir}`)
-
-        })
+            sorterArray.push(`${quote}${field}${quote} ${dir}`);
+        });
     }
     const sorterString = sorterArray.length ? ` Order By ${sorterArray.join(', ')}` : '';
-    const filterString =  filterArray.length? ' WHERE ' + filterArray.join(" " + boolOperand + " ") : '';
 
     const sql = `SELECT *
-                 FROM dnb.${schema}."${table}"
+                 FROM ${operator}.${schema}."${table}"
                    ${filterString}
                    ${sorterString}
                  LIMIT $${i++} OFFSET $${i++}`;
 
+    const sqlCount = `SELECT Count(*) as count FROM ${operator}.${schema}."${table}" ${filterString};`;
+
     logger.info(sql);
-    logger.info([...filterValues, size, offset])
-    const sqlCount = `SELECT Count(*) as count FROM dnb.${schema}."${table}" ${filterString};`;
+    logger.info([...filterValues, size, offset]);
 
     try {
 
-        const pg = operator=== 'dnb'? dnbPg: celcomPg;
+        let resultObj;
+        let pg;
+
+        if (pgVersion === 12) {
+            pg = (operator === 'dnb' ? dnbPg : celcomPg);
+        }
+        if (pgVersion === 14) {
+            pg = new PostgresBackend(operator, 14);
+        }
         const pool = await pg.setupPool();
         const result = await pool.query(sql, [...filterValues, size, offset]);
         const countResult = await pool.query(sqlCount, filterValues);
-        let resultObj = {
-            data: result.rows,
+        resultObj = {
+            data: roundJsonValues(result.rows),
             count: parseInt(countResult.rows[0].count),
-            last_page: Math.ceil(countResult.rows[0]['count']/size)
+            last_page: Math.ceil(countResult.rows[0]['count'] / size),
+            success: true
         };
-        response.status(200).json(resultObj);
+        if (!countResult.rows[0]['count']) {
+            logger.info(`no data for ${request.originalUrl}`);
+        }
+        return response.status(200).json(resultObj);
         // response.status(200).json({cache: false, ...resultObj});
         // saveToCache(request, resultObj).then(r => {logger.info(`saved to cache ${request.originalUrl}`)});
+
     } catch (e) {
         next(e);
     }
 
-}
+};
 
 module.exports = {
     getCellInfo,
@@ -313,4 +365,4 @@ module.exports = {
     getTabulatorConfig,
     testQuery,
     getTabulatorData
-}
+};

@@ -30,5 +30,4 @@ module.exports = {
     sqlDnb,
     sqlCelcom,
     getSql
-
 };

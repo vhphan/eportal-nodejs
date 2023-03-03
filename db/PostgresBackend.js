@@ -10,11 +10,11 @@ pg.types.setTypeParser(pg.types.builtins.FLOAT8, (value) => {
 pg.types.setTypeParser(pg.types.builtins.NUMERIC, (value) => {
     return parseFloat(value);
 });
-pg.types.setTypeParser(1114, function(stringValue) {
-  return stringValue;  //1114 for time without timezone type
+pg.types.setTypeParser(1114, function (stringValue) {
+    return stringValue;  //1114 for time without timezone type
 });
-pg.types.setTypeParser(1082, function(stringValue) {
-  return stringValue;  //1082 for date type
+pg.types.setTypeParser(1082, function (stringValue) {
+    return stringValue;  //1082 for date type
 });
 
 if (result.error) {
@@ -25,34 +25,54 @@ if (result.error) {
 
 
 class PostgresBackend {
-    constructor(dbName='dnb') {
+    constructor(dbName = 'dnb', postgresVersion = 12) {
         this.pool = null;
         this.client = null;
         this.config = {};
         this.dbName = dbName;
+
+        if (postgresVersion === 12) {
+            this.user = process.env.PGDB_USER;
+            this.pass = process.env.PGDB_PASS;
+            this.port = process.env.PGDB12_PORT;
+        } else if (postgresVersion === 14) {
+            switch (dbName) {
+                case 'dnb':
+                    this.user = process.env.PGDB14_USER_DNB;
+                    this.pass = process.env.PGDB14_PASS_DNB;
+                    break;
+                case 'celcom':
+                    this.user = process.env.PGDB14_USER_CELCOM;
+                    this.pass = process.env.PGDB14_PASS_CELCOM;
+                    break;
+            }
+            this.port = process.env.PGDB14_PORT;
+        }
+
+
     }
 
     setupPool() {
         if (!this.pool) {
             this.config = {
-                user: process.env.PGDB_USER,
-                password: process.env.PGDB_PASS,
+                user: this.user,
+                password: this.pass,
                 host: 'localhost',
                 database: this.dbName,
-                port: 6543,
+                port: this.port,
             };
-            this.pool = new Pool(this.config)
+            this.pool = new Pool(this.config);
         }
         return this.pool;
     }
 
     getClient() {
         this.config = {
-            user: process.env.PGDB_USER,
-            password: process.env.PGDB_PASS,
+            user: this.user,
+            password: this.pass,
             host: 'localhost',
             database: this.dbName,
-            port: 6543,
+            port: this.port,
         };
         return new Client(this.config);
     }
@@ -72,22 +92,22 @@ class PostgresBackend {
         pool.connect((err, client, done) => {
             if (err) return callback(err);
             client.query(sql, queryParams, (err, results) => {
-                done()
+                done();
                 if (err) {
-                    console.error("ERROR: ", err)
-                    return callback(err)
+                    console.error("ERROR: ", err);
+                    return callback(err);
                 }
-                callback(null, results.rows)
-            })
+                callback(null, results.rows);
+            });
         });
     }
 
-    getSubscriber() {
-        // const databaseUrl = process.env.DB_URL_RFDB;
-        const databaseUrl = '"postgres://postgres:postgres@localHost:6543/rfdb"';
-        console.log('dburl', databaseUrl);
-        return createSubscriber({connectionString: databaseUrl});
-    }
+    // getSubscriber() {
+    //     // const databaseUrl = process.env.DB_URL_RFDB;
+    //     const databaseUrl = `"postgres://postgres:postgres@localHost:6543/rfdb"`;
+    //     console.log('dburl', databaseUrl);
+    //     return createSubscriber({connectionString: databaseUrl});
+    // }
 }
 
 module.exports = PostgresBackend;

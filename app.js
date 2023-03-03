@@ -21,13 +21,13 @@ const errorHandler = require('./middleware/error');
 const {createListener} = require("./db/utils");
 const {postgrestProxy} = require("./proxies/proxify");
 const {createProxyMiddleware} = require("http-proxy-middleware");
-const result = require('dotenv').config({path: './.env'})
+const result = require('dotenv').config({path: './.env'});
 const {createWatcherProcess} = require("./tools/utils");
 const {initScheduledJobsForCelcom} = require("./crons/scheduledFuncs");
 
 logger.info('Starting app.js...');
 if (result.error) {
-    throw result.error
+    throw result.error;
 }
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
@@ -64,7 +64,6 @@ app.use(errorHandler);
 //     },
 // })
 
-
 const server = app.listen(port,
     () => {
         console.log(`listening on ${port}`);
@@ -73,55 +72,52 @@ const server = app.listen(port,
         );
     }
 );
+console.log(`this platform is ${process.platform}`);
 
-const socketServer = socket(
-    server,
-    {
-        cors: {
-            origin: '*',
-        },
-        path: '/node/socket.io'
-    }
-);
+if (process.platform !== 'win32') {
 
-const pg = new PostgresBackend();
-const client = pg.getClient();
+    const socketServer = socket(
+        server,
+        {
+            cors: {
+                origin: '*',
+            },
+            path: '/node/socket.io'
+        }
+    );
 
-socketServer.on('connection', (socket) => {
-    console.log(socket.id);
-    logger.info(`socket id = ${socket.id}`);
-    // upgradedServer.emit("broadcastMessage", data);
-    for (let i = 0; i <= 3; i++) {
-        setTimeout(() => {
-            socketServer.emit('broadcastMessage', {i});
-            logger.info(`emitting broadcastMessage i=${i}`)
-        }, i * 2000)
-    }
-    socket.on('sendingMessage', (data) => {
-        console.log(data);
+    const pg = new PostgresBackend();
+    const client = pg.getClient();
+
+    socketServer.on('connection', (socket) => {
+        console.log(socket.id);
+        logger.info(`socket id = ${socket.id}`);
+        // upgradedServer.emit("broadcastMessage", data);
+        for (let i = 0; i <= 3; i++) {
+            setTimeout(() => {
+                socketServer.emit('broadcastMessage', {i});
+                logger.info(`emitting broadcastMessage i=${i}`);
+            }, i * 2000);
+        }
+        socket.on('sendingMessage', (data) => {
+            console.log(data);
+        });
+
+        createListener(client, 'new_jobs', (data) => {
+            const payload = JSON.parse(data.payload);
+            socketServer.emit('broadcastMessage', payload);
+        });
+
     });
+    createListeners(client);
+    createWatcherProcess();
 
-    createListener(client, 'new_jobs', (data) => {
-        const payload = JSON.parse(data.payload);
-        socketServer.emit('broadcastMessage', payload);
-    });
-})
-
-createListeners(client);
+    // cron jobs
+    initScheduledJobsForCelcom();
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
     logger.error(`Error: ${err.message}`);
     console.log(err);
 });
-
-
-createWatcherProcess();
-
-if (process.platform === 'win32') {
-
-
-}
-
-// cron jobs
-initScheduledJobsForCelcom();

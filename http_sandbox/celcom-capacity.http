@@ -4,3 +4,77 @@ GET http://localhost:3001/node/celcom-capacity/v1/regionalCountTrend
 Accept: application/json
 API: {{apiKey}}
 
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/regionalCountTrend?weeks=[1,2,3]
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/regionalCountTrend?aging=6&aging=7&aging=8
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/regionalCountTrend
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getAgingCountTrend
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getIssueCountTrend
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/worstCellsList
+Accept: application/json
+API: {{apiKey}}
+
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getTabulatorData?table=worst_cells&page=1&size=100&schema=capacity
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getTabulatorData?table=worst_cells&schema=capacity&filter[0][field]=aging&filter[0][type]=function&filter[0][value][start]=2&filter[0][value][end]=6&page=1&size=100
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getTabulatorData?table=worst_cells&schema=capacity&filter[0][field]=Final Status&filter[0][type]=in&filter[0][value]=Optimize&page=1&size=100
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getTabulatorData?table=worst_cells&schema=capacity&filter[0][field]=Region&filter[0][type]=in&filter[0][value][0]=Eastern&filter[1][field]=aging&filter[1][type]=in&filter[1][value][0]=1&filter[2][field]=issue_category&filter[2][type]=in&filter[2][value][0]=Untagged&filter[2][value][1]=Event&filter[2][value][2]=Alarm&filter[2][value][3]=Optimization&filter[2][value][4]=Congestion&page=1&size=100
+Accept: application/json
+API: {{apiKey}}
+
+
+
+
+### GET request with environment variables
+GET http://localhost:3001/node/celcom-capacity/v1/getTabulatorData?table=worst_cells&schema=capacity&filter[0][field]=Region&filter[0][type]=in&filter[0][value][0]=Eastern&filter[1][field]=issue_category&filter[1][type]=in&filter[1][value][0]=Untagged&filter[1][value][1]=Event&page=1&size=100
+Accept: application/json
+API: {{apiKey}}
+
+
+### GET request with environment variables
+GET {{livaCapacityV1}}/getOverallCountAndPercentageTrend
+Accept: application/json
+API: {{apiKey}}
+

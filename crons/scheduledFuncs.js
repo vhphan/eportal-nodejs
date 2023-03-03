@@ -31,6 +31,10 @@ const resetSomeUsers = async (numOfUsers=2) => {
 
 const initScheduledJobsForCelcom = () => {
     // create cron job for every day at 7:00 AM
+    if (process.platform === 'win32') {
+        console.log("Not running scheduled jobs on Windows");
+        return;
+    }
     const cronString = "0 7 * * *";
     CronJob.schedule(cronString, async () => {
         logger.info("Running scheduled job for Celcom at 7:00 AM");

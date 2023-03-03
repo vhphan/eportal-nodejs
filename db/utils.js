@@ -1,6 +1,7 @@
 const PostgresBackend = require("./PostgresBackend");
 const {logger} = require("../middleware/logger");
 const nodemailer = require("nodemailer");
+const asyncHandler = require("#src/middleware/async");
 
 
 const roundJsonValues = (jsonArray) => {
@@ -49,11 +50,15 @@ const getCookies = request => {
 };
 
 const createListener = function (pgClient, eventName, callBack = null) {
-    pgClient.connect();
-    pgClient.query(`LISTEN "${eventName}"`);
-    pgClient.on('notification', function (data) {
-        if (callBack) callBack(data);
-    });
+    try {
+        pgClient.connect();
+        pgClient.query(`LISTEN "${eventName}"`);
+        pgClient.on('notification', function (data) {
+            callBack?.(data);
+        });
+    } catch (e) {
+        logger.error(e);
+    }
 };
 
 const isObject = (v) => typeof v === 'object' && v !== null;

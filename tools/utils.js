@@ -16,8 +16,8 @@ function logWatcher(watcher) {
 }
 
 function createWatcherProcess() {
-    logger.info("start watching");
-    const spawn = require('child_process').spawn;
+    // logger.info("start watching");
+    // const spawn = require('child_process').spawn;
 
     // const watcher1 = spawn('node', ['./tools/celcomEdbWatcher.js']);
     // logWatcher(watcher1);
