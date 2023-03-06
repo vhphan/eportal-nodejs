@@ -238,13 +238,14 @@ const getGeoJSON = async (request, response) => {
 
 const getTabulatorData = (operator = 'dnb', pgVersion = 12) => async (request, response, next) => {
     const {page, size, schema, table} = request.query;
-    let {filters, filter, sorter, sorters, boolOperand} = request.query;
+    let {filters, filter, sorter, sorters, sort, sorts, boolOperand} = request.query;
     const offset = size * (page - 1);
     let filterArray = [];
     let filterValues = [];
     let i = 1;
     filters = filters || filter;
     sorters = sorters || sorter;
+    sorters ??= sort || sorts;
     boolOperand = boolOperand || 'and';
 
     if (filters) {
@@ -279,7 +280,7 @@ const getTabulatorData = (operator = 'dnb', pgVersion = 12) => async (request, r
                     // filterValues.push(`${f['value']}`);
                 }
                 return;
-            }
+              }
 
             switch (f['type']) {
                 case filterTypes.like:
