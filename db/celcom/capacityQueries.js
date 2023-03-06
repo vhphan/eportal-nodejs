@@ -105,7 +105,7 @@ const getIssueCountTrend = async (req, res) => {
     const results = await sql`
         SELECT t1."year_week",
                issue_categories.issue_category,
-               sum(t1."aging") as count
+               count(*) as count
         from celcom.capacity.aging_per_sector_history as t1
                  left join celcom.capacity.last_issue on last_issue.sector_id = t1."Sector ID"
                  inner join celcom.capacity.issue_categories on issue_categories.id = last_issue.issue_id
