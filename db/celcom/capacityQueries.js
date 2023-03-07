@@ -5,6 +5,7 @@ const operator = 'celcom';
 const sql = getSql(operator);
 
 const getWorstCellsList = async (req, res) => {
+    // language=PostgreSQL
     const results = await sql`  
     with aging_table as (select "Sector ID", count(*) as aging
                      from celcom.capacity.cap_data
@@ -39,7 +40,7 @@ const getWorstCellsList = async (req, res) => {
 function getFilters(req) {
     logger.info(req.query);
     const agings = req.query['agings']?.map(w => parseInt(w)) || [1, 2, 3, 4, 5, 6, 7, 8];
-    const regions = req.query['regions'] || ['Eastern', 'Sabah', 'Sarawak'];
+    const regions = req.query['regions'] || ['Eastern', 'Sabah', 'Sarawak'];x
     const issueTags = req.query['issueTags'] || ['Untagged', 'Event', 'Alarm', 'Optimization', 'Congestion'];
     return {agings, regions, issueTags};
 }
