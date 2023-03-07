@@ -40,7 +40,7 @@ const getWorstCellsList = async (req, res) => {
 function getFilters(req) {
     logger.info(req.query);
     const agings = req.query['agings']?.map(w => parseInt(w)) || [1, 2, 3, 4, 5, 6, 7, 8];
-    const regions = req.query['regions'] || ['Eastern', 'Sabah', 'Sarawak'];x
+    const regions = req.query['regions'] || ['Eastern', 'Sabah', 'Sarawak'];
     const issueTags = req.query['issueTags'] || ['Untagged', 'Event', 'Alarm', 'Optimization', 'Congestion'];
     return {agings, regions, issueTags};
 }
@@ -168,7 +168,7 @@ const getOverallCountAndPercentageTrend = async (req, res) => {
                     group by year_week),
 
              time_frame as (select year_week, first_day_of_week
-                            from capacity.d_week
+                            from celcom.capacity.d_week
                             where year_week >= (select min(year_week) from t2)
                               and year_week <= (select max(year_week) from t2))
 
@@ -186,8 +186,6 @@ const getOverallCountAndPercentageTrend = async (req, res) => {
             data: roundJsonValues(results),
         }
     );
-
-
 };
 
 module.exports = {

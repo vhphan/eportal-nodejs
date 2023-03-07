@@ -78,3 +78,5 @@ GET {{livaCapacityV1}}/getOverallCountAndPercentageTrend
 Accept: application/json
 API: {{apiKey}}
 
+### GET request with environment variables
+GET http://localhost:3001/node/celcom/geojson?stats=1&region=CENTRAL&system=L18&size=m&api=793a08c50ad74aeba37a0bc1c5231b2558417c8875ce5738d742bb44cc5a33e1
