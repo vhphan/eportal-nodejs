@@ -42,10 +42,12 @@ const arrayToCsv = (results, parseDate = true, dateColumns = 'Date', replaceNull
 
 function gMap() {
     return async (req, res, next) => {
+        const callback = req.query.callback || 'console.log';
         try {
             const params = new URLSearchParams({
                 key: process.env.GOOGLE_KEY,
-                libraries: 'places,visualization,geometries',
+                callback,
+                libraries: 'places,visualization',
                 v: 'quarterly'
             });
 

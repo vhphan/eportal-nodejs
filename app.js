@@ -1,15 +1,19 @@
 global.__basedir = __dirname;
 const express = require('express');
+const bodyParser = require("body-parser");
 const socket = require('socket.io');
 const app = express();
 const port = 3001;
 const general = require('./routes/general');
 const celcom = require('./routes/celcom');
 const celcomCapacity = require('./routes/celcom_capacity');
+
+const dnbProject = require('./routes/dnb_project');
 const ePortal = require('./routes/cmeportal');
 const dnb = require('./routes/dnb');
 const dnb2 = require('./routes/dnb2');
 const dnb3 = require('./routes/dnb_stats_v3/dnb3');
+const {dnbSocketRouter, createSocketServer} = require('#src/routes/dnbWebSocket');
 const tts = require('./tts/tts');
 const cors = require('cors');
 const PostgresBackend = require("./db/PostgresBackend");
@@ -24,13 +28,16 @@ const {createProxyMiddleware} = require("http-proxy-middleware");
 const result = require('dotenv').config({path: './.env'});
 const {createWatcherProcess} = require("./tools/utils");
 const {initScheduledJobsForCelcom} = require("./crons/scheduledFuncs");
+const {logRequest} = require("#src/middleware/logger");
+const os = require("os");
 
 logger.info('Starting app.js...');
 if (result.error) {
     throw result.error;
 }
-app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(bodyParser.json({limit: "50mb"}));
+app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
+
 app.use(cors());
 app.use(express.static('static'));
 app.use('/node/general', general);
@@ -39,9 +46,14 @@ app.use('/node/celcom-capacity/v1', celcomCapacity);
 app.use('/node/celcom/e-portal/v1', ePortal);
 app.use('/node/dnb', dnb);
 app.use('/node/dnb', dnb2);
+app.use('/node/dnb-project/v1', dnbProject);
 app.use('/node/dnb/v3', dnb3);
+app.use('/node/dnbSocket', dnbSocketRouter);
 app.use('/node/tts', tts);
 app.use(errorHandler);
+app.set('json spaces', 0);
+
+
 
 // Proxy endpoints
 // app.use('/node/jlab2', createProxyMiddleware({
@@ -74,7 +86,16 @@ const server = app.listen(port,
 );
 console.log(`this platform is ${process.platform}`);
 
+const hostName = os.hostname();
+
+if (hostName === 'server.eprojecttrackers.com') {
+    logger.info('Creating socket server...');
+    const dnbSocketServer = createSocketServer(server);
+    logger.info(dnbSocketServer);
+}
+
 if (process.platform !== 'win32') {
+    logger.info(`hostname = ${hostName}`);
 
     const socketServer = socket(
         server,
@@ -90,6 +111,7 @@ if (process.platform !== 'win32') {
     const client = pg.getClient();
 
     socketServer.on('connection', (socket) => {
+
         console.log(socket.id);
         logger.info(`socket id = ${socket.id}`);
         // upgradedServer.emit("broadcastMessage", data);

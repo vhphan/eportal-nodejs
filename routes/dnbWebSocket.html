@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Socket</title>
+</head>
+<body>
+<h3>Welcome Sockets</h3>
+<div id="output"></div>
+<script src="https://cdn.socket.io/4.4.0/socket.io.min.js"
+        integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj"
+        crossorigin="anonymous"></script>
+<script>
+    const currentServer = window.location.origin;
+    const socket = io.connect(currentServer, {path: "/node/dnbSocket/socket"});
+    socket.on("connect", () => {
+        console.log(socket.connected); // true
+    });
+
+    socket.on("disconnect", () => {
+        console.log(socket.connected); // false
+    });
+
+    socket.on("broadcastMessage", function (data) {
+        const output = document.getElementById("output");
+        output.innerHTML +=
+            `<p><strong>${JSON.stringify(data)}</strong></p>`;
+    });
+
+</script>
+</body>
+</html>
