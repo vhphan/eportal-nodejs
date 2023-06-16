@@ -40,17 +40,30 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 function logRequest(req, res, next) {
-    logger.info(req.url)
-    next()
+    logger.info(req.url);
+    next();
 }
 
 function logError(err, req, res, next) {
-    logger.error(err)
-    next()
+    logger.error(err);
+    next();
+}
+
+function createMyLogger(logFileName) {
+    return createLogger({
+            level: 'info',
+            format: myFormat,
+            transports: [
+                new transports.File({filename: `logs/${logFileName}.log`}),
+            ],
+
+        }
+    );
 }
 
 module.exports = {
     logger,
     logRequest,
     logError,
-}
+    createMyLogger
+};

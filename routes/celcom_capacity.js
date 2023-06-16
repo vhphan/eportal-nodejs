@@ -16,9 +16,9 @@ const operator = 'celcom';
 router.use(auth(operator));
 
 // Dashboard Page 1
-router.get('/regionalCountTrend', asyncHandler(getRegionalCountTrend));
-router.get('/agingCountTrend', asyncHandler(getAgingCountTrend));
-router.get('/worstCellsList', asyncHandler(getWorstCellsList));
+router.get('/regionalCountTrend', cache12h, asyncHandler(getRegionalCountTrend));
+router.get('/agingCountTrend', cache12h, asyncHandler(getAgingCountTrend));
+router.get('/worstCellsList', cache12h, asyncHandler(getWorstCellsList));
 
 router.get('/getTabulatorData', asyncHandler(pgDb.getTabulatorData(operator, 14)));
 

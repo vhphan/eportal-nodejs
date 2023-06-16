@@ -103,7 +103,6 @@ const getTabulatorDataMySql = (operator) => async (request, response, next) => {
     const sqlCount = `SELECT Count(*) as count FROM ${schema}.${table} ${filterString};`;
     logger.info(sqlCount);
     try {
-
         const db = mysqlDbMap[operator];
         await db.connect();
         const pool = db.pool;

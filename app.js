@@ -30,6 +30,7 @@ const {createWatcherProcess} = require("./tools/utils");
 const {initScheduledJobsForCelcom} = require("./crons/scheduledFuncs");
 const {logRequest} = require("#src/middleware/logger");
 const os = require("os");
+const {dnbMessagingRouter} = require("#src/routes/dnbMessaging");
 
 logger.info('Starting app.js...');
 if (result.error) {
@@ -49,8 +50,22 @@ app.use('/node/dnb', dnb2);
 app.use('/node/dnb-project/v1', dnbProject);
 app.use('/node/dnb/v3', dnb3);
 app.use('/node/dnbSocket', dnbSocketRouter);
+app.use('/node/dnbMessaging', dnbMessagingRouter);
 app.use('/node/tts', tts);
+
+
 app.use(errorHandler);
+app.use(function(req, res, next){
+    req.setTimeout(15_000, function(){
+        // call back function is called when request timed out.
+        res.json({
+            success: false,
+            message: 'Request timed out.',
+            url: req.url,
+        });
+    });
+    next();
+});
 app.set('json spaces', 0);
 
 
@@ -82,6 +97,7 @@ const server = app.listen(port,
         logger.info(
             'starting server....'
         );
+        logger.info(`${process.env.NODE_ENV} environment`);
     }
 );
 console.log(`this platform is ${process.platform}`);
@@ -90,11 +106,10 @@ const hostName = os.hostname();
 
 if (hostName === 'server.eprojecttrackers.com') {
     logger.info('Creating socket server...');
-    const dnbSocketServer = createSocketServer(server);
-    logger.info(dnbSocketServer);
+    global.__dnbSocketServer = createSocketServer(server);
 }
 
-if (process.platform !== 'win32') {
+if (process.env.NODE_ENV === 'production') {
     logger.info(`hostname = ${hostName}`);
 
     const socketServer = socket(
@@ -136,6 +151,11 @@ if (process.platform !== 'win32') {
 
     // cron jobs
     initScheduledJobsForCelcom();
+
+}
+
+if (process.env.NODE_ENV === 'development') {
+
 }
 
 // Handle unhandled promise rejections

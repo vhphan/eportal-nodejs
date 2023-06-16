@@ -14,7 +14,7 @@ const getProjects = async (request, response) => {
                     ;
         `;
     const results = await getSqlResults(mysql, sqlQuery);
-    response.status(200).json(results);
+    response.json(results);
 }
 
 const getProcesses = async (request, response) => {
@@ -25,8 +25,18 @@ const getProcesses = async (request, response) => {
                     ;
         `;
     const results = await getSqlResults(mysql, sqlQuery);
-    response.status(200).json(results);
+    response.json(results);
 }
+
+const getPOs = async (request, response) => {
+    //language=MySQL
+    const sqlQuery = `
+        SELECT DISTINCT PO FROM eproject_cm.tblsiteinfo WHERE PO != ''
+    `;
+    const results = await getSqlResults(mysql, sqlQuery);
+    response.json(results);
+};
+
 
 const getSimplifiedE2E = async (request, response) => {
     const projects = request.query["projects"] || '%';
@@ -37,7 +47,7 @@ const getSimplifiedE2E = async (request, response) => {
     AND Process IN (?)
     `;
     const results = await getSqlResults(mysql, sqlQuery, [projects, processes]);
-    response.status(200).json(results);
+    response.json(results);
 }
 
 
@@ -47,4 +57,5 @@ module.exports = {
     getProjects,
     getProcesses,
     getSimplifiedE2E,
+    getPOs
 }
