@@ -9,7 +9,9 @@ const path = require("path");
 // const bodyParser = require("body-parser");
 //
 // const urlencodedParser = bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000});
+const multer = require('multer');
 
+const upload = multer({dest: 'uploads/'});
 const operator = 'dnb';
 router.use(auth(operator));
 router.use(logRequest);
@@ -60,10 +62,8 @@ router.post('/uploadExcelReport', asyncHandler(async (req, res) => {
     //Use the name of the input field (i.e. "testFile") to retrieve the uploaded file
     let {excelReport} = req.files;
 
-    //Use the mv() method to place the file in upload directory (i.e. "uploads")
     excelReport.mv(getProjectBaseFolder() + excelReport.name);
 
-    //send response
     return res.json({
         success: true,
         message: 'File is uploaded',
@@ -139,5 +139,53 @@ router.get('/getProgressData', asyncHandler(async (req, res) => {
     });
 }));
 
+router.post('/uploadClusterPolygonRarFile', upload.single('file'), asyncHandler(async (req, res) => {
+
+        if (!req.file) {
+            return res.status(501).json({
+                success: false,
+                message: 'No file uploaded'
+            });
+        }
+
+        const uploadFilePath = `${global.__basedir}/${req.file.path}`;
+        const clusterRarFolder = `${global.__basedir}/scripts/polygons/rarfile`;
+        const clusterRarFilePath = clusterRarFolder + '/' + req.file.originalname;
+
+        // remove existing files in the clusterRarFolder
+        fs.readdir(clusterRarFolder, (err, files) => {
+                if (err) throw err;
+
+                for (const file of files) {
+                    fs.unlink(path.join(clusterRarFolder, file), err => {
+                        if (err) throw err;
+                    });
+                }
+            }
+        );
+
+        // move the file to the clusterRarFolder
+        fs.rename(uploadFilePath, clusterRarFilePath, function (err) {
+                if (err) {
+                    throw err;
+                }
+                console.log("File moved successfully");
+            }
+        );
+
+        return res.json({
+                success: true,
+                message: 'File is uploaded',
+                data: {
+                    name: req.file.originalname,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size,
+                    timeUploaded: new Date()
+                }
+            }
+        );
+
+    }
+));
 
 module.exports = router;
