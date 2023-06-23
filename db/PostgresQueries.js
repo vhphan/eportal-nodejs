@@ -25,7 +25,7 @@ const getCellInfo = async (request, response) => {
             throw error;
         }
         response.status(200).json(results.rows);
-    });
+    }); 
 };
 
 const getCurrentNominal = async (dnbIndex) => {
