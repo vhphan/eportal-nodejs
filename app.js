@@ -36,6 +36,7 @@ logger.info('Starting app.js...');
 if (result.error) {
     throw result.error;
 }
+
 app.use(bodyParser.json({limit: "50mb"}));
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
 
@@ -54,7 +55,7 @@ app.use('/node/dnbMessaging', dnbMessagingRouter);
 app.use('/node/tts', tts);
 
 
-app.use(errorHandler);
+
 app.use(function(req, res, next){
     req.setTimeout(15_000, function(){
         // call back function is called when request timed out.
@@ -90,6 +91,8 @@ app.set('json spaces', 0);
 //         '^/node/pgr': '', // remove base path
 //     },
 // })
+
+app.use(errorHandler);
 
 const server = app.listen(port,
     () => {
@@ -160,6 +163,6 @@ if (process.env.NODE_ENV === 'development') {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-    logger.error(`Error: ${err.message}`);
+    logger.error(`Error UnHandled: ${err.message}`);
     console.log(err);
 });

@@ -25,7 +25,7 @@ const getCellInfo = async (request, response) => {
             throw error;
         }
         response.status(200).json(results.rows);
-    }); 
+    });
 };
 
 const getCurrentNominal = async (dnbIndex) => {
@@ -354,6 +354,36 @@ const getTabulatorData = (operator = 'dnb', pgVersion = 12) => async (request, r
 
 };
 
+const checkIfTableExists = async function (dbName, schema, table) {
+    const sql = 'SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_catalog=$1 AND table_schema = $2 AND table_name = $3)';
+    const pg = new PostgresBackend(dbName, 12);
+    const pool = pg.setupPool();
+    const results = await pool.query(sql, [dbName, schema, table]);
+    logger.info(results);
+    return results.rows[0].exists;
+}
+
+const getTableRowCount = async (request, response) => {
+    const {dbName, schemaName, tableName} = request.query;
+    //  check if schema and table exists
+    const tableExists = await checkIfTableExists(dbName, schemaName, tableName);
+
+    const sqlCount = `SELECT Count(*) as count FROM ${dbName}.${schemaName}."${tableName}";`;
+    const pg = new PostgresBackend(dbName, 12);
+    const pool = pg.setupPool();
+    const result = await pool.query(sqlCount);
+    response.status(200).json({
+        success: true,
+        data: {
+            rowCount: result.rows[0].count,
+            dbName,
+            schemaName,
+            tableName,
+        }
+    });
+
+};
+
 module.exports = {
     getCellInfo,
     updateNominal,
@@ -365,5 +395,6 @@ module.exports = {
     saveTabulatorConfig,
     getTabulatorConfig,
     testQuery,
-    getTabulatorData
+    getTabulatorData,
+    getTableRowCount,
 };

@@ -489,7 +489,7 @@ Content-Type: application/json
 POST http://localhost:3001/node/dnbMessaging/sendToHawk
 Content-Type: application/json
 
-{ZZZ
+{
   "jsonMessage": {
     "action": "getStats",
     "cellId": "DAKIN0171_L7_0130"

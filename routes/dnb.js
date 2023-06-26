@@ -42,6 +42,7 @@ router.route('/tabulatorConfig')
 router.get('/tabulatorData', cache15m,
     asyncHandler(pgDb.getTabulatorData('dnb')));
 
+router.get('/tableRowCount', cache15m, asyncHandler(pgDb.getTableRowCount));
 // router.route('testtest')
 //     .get(getHandler)
 //     .put(putHandler)
